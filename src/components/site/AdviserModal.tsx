@@ -19,12 +19,10 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { submitLead } from "@/lib/api";
 
 const INTEREST_OPTIONS = [
-  "Agile Management",
-  "Project Management",
-  "DevOps",
-  "Software Testing",
-  "Service Management",
-  "BootCamps",
+  "MS Excel Essentials",
+  "Advanced Excel Mastery",
+  "Word & PPT Essentials",
+  "Advanced Word & PPT Mastery",
   "Enterprise Training",
   "Others",
 ];

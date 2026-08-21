@@ -4,58 +4,47 @@ export type SampleCourse = {
   category: string;
   durationHours: number;
   enrolledCount: number;
+  slug?: string;
+  price?: number;
+  imageUrl?: string;
 };
 
-// Illustrative listing shown only when the live catalog has nothing published yet
-// for a category, so the page never renders empty.
+// Mock courses shown during loading or database sync to match Sarvpratham Analytics
 export const sampleCourses: SampleCourse[] = [
   {
-    title: "Certified Scrum Master (CSM)",
-    tag: "Trending",
-    category: "Agile Management",
-    durationHours: 16,
-    enrolledCount: 3420,
+    title: "MS Excel Essentials Course Basics",
+    tag: "Best Seller",
+    category: "Data & Productivity",
+    durationHours: 15,
+    enrolledCount: 1420,
+    slug: "excel-essentials",
+    price: 499,
   },
   {
-    title: "Project Management Professional (PMP)",
+    title: "Advanced Excel Mastery Course with AI & Real-Life Projects",
     tag: "Trending",
-    category: "Project Management",
-    durationHours: 24,
+    category: "Data & Productivity",
+    durationHours: 35,
     enrolledCount: 2890,
+    slug: "excel-mastery",
+    price: 999,
   },
   {
-    title: "Certified Product Management Professional",
+    title: "MS Word & PowerPoint Essentials with AI Course",
     tag: "Recommended",
-    category: "Product Management",
-    durationHours: 18,
+    category: "Data & Productivity",
+    durationHours: 20,
+    enrolledCount: 940,
+    slug: "word-ppt-essentials",
+    price: 499,
+  },
+  {
+    title: "Advance MS Word & Powerpoint Mastery + AI Course",
+    tag: "Hot & New",
+    category: "Data & Productivity",
+    durationHours: 30,
     enrolledCount: 1240,
-  },
-  {
-    title: "Certified Scrum Product Owner (CSPO)",
-    tag: "Recommended",
-    category: "Product Owner",
-    durationHours: 16,
-    enrolledCount: 1980,
-  },
-  {
-    title: "DevOps Foundation Certification",
-    tag: "Trending",
-    category: "DevOps",
-    durationHours: 12,
-    enrolledCount: 2150,
-  },
-  {
-    title: "ISTQB Certified Tester Foundation Level",
-    tag: "Recommended",
-    category: "Software Testing",
-    durationHours: 10,
-    enrolledCount: 1670,
-  },
-  {
-    title: "ITIL 4 Foundation Certification",
-    tag: "Recommended",
-    category: "Service Management",
-    durationHours: 14,
-    enrolledCount: 1430,
+    slug: "word-ppt-mastery",
+    price: 999,
   },
 ];
