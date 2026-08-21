@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Courses — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html">Dashboard</a>
+    <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/courses.html" class="active">Courses</a>
+    <a href="/admin/categories.html">Categories</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main">
+    <h1>Courses</h1>
+    <p class="subtitle">Everything shown on the public site's course catalog</p>
+    <div class="toolbar">
+      <button class="btn-gold" id="new-course">+ New Course</button>
+    </div>
+    <div id="table-wrap"></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <form class="modal" id="course-form">
+    <h2 id="modal-title">New course</h2>
+    <div class="form-grid">
+      <div class="full">
+        <label>Title</label>
+        <input name="title" required />
+      </div>
+      <div class="full">
+        <label>Slug (auto-generated if left blank)</label>
+        <input name="slug" placeholder="e.g. certified-scrum-master" />
+      </div>
+      <div>
+        <label>Category</label>
+        <select name="category" id="category-select" required>
+          <option value="" disabled selected>Select a category…</option>
+        </select>
+        <div class="muted" style="font-size:0.78rem;margin-top:4px">
+          <a href="/admin/categories.html" style="text-decoration:underline">Manage categories</a>
+        </div>
+      </div>
+      <div>
+        <label>Tag</label>
+        <input name="tag" placeholder="Trending / Recommended" />
+      </div>
+      <div>
+        <label>Level</label>
+        <input name="level" placeholder="All Levels" />
+      </div>
+      <div>
+        <label>Duration (hours)</label>
+        <input name="durationHours" type="number" min="0" />
+      </div>
+      <div>
+        <label>Price</label>
+        <input name="price" type="number" min="0" step="0.01" />
+      </div>
+      <div>
+        <label>Currency</label>
+        <input name="currency" placeholder="USD" />
+      </div>
+      <div>
+        <label>Enrolled count</label>
+        <input name="enrolledCount" type="number" min="0" />
+      </div>
+      <div>
+        <label>Image URL</label>
+        <input name="imageUrl" placeholder="https://..." />
+      </div>
+      <div class="full">
+        <label>Short description</label>
+        <input name="shortDescription" />
+      </div>
+      <div class="full">
+        <label>Full description</label>
+        <textarea name="description" rows="3"></textarea>
+      </div>
+      <div class="full">
+        <label>Highlights (one per line)</label>
+        <textarea name="highlights" rows="4"></textarea>
+      </div>
+      <div class="full checkbox-row">
+        <input type="checkbox" name="published" id="published" checked />
+        <label for="published" style="margin:0">Published (visible on the public site)</label>
+      </div>
+    </div>
+    <div class="error-msg" id="form-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="cancel-btn">Cancel</button>
+      <button type="submit" class="btn-primary">Save course</button>
+    </div>
+  </form>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let courses = [];
+  let categories = [];
+  let editingId = null;
+
+  function populateCategorySelect(currentValue) {
+    const select = document.getElementById("category-select");
+    const names = categories.map((c) => c.name);
+    if (currentValue && !names.includes(currentValue)) names.push(currentValue);
+    select.innerHTML =
+      `<option value="" disabled ${currentValue ? "" : "selected"}>Select a category…</option>` +
+      names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+  }
+
+  function render() {
+    const wrap = document.getElementById("table-wrap");
+    if (courses.length === 0) {
+      wrap.innerHTML = `<div class="empty">No courses yet. Create the first one.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Title</th><th>Category</th><th>Price</th><th>Enrolled</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${courses.map((c) => `
+            <tr data-id="${c._id}">
+              <td>${escapeHtml(c.title)}<div class="muted" style="font-size:0.78rem">/${escapeHtml(c.slug)}</div></td>
+              <td>${escapeHtml(c.category)}</td>
+              <td>${c.currency || "USD"} ${c.price ?? 0}</td>
+              <td>${(c.enrolledCount ?? 0).toLocaleString()}</td>
+              <td>${c.published ? '<span class="badge badge-contacted">Published</span>' : '<span class="badge badge-closed">Draft</span>'}</td>
+              <td style="white-space:nowrap">
+                <button class="btn-ghost btn-sm" data-edit="${c._id}">Edit</button>
+                <button class="btn-danger btn-sm" data-delete="${c._id}">Delete</button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+    wrap.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => openModal(courses.find((c) => c._id === btn.dataset.edit)));
+    });
+    wrap.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this course?")) return;
+        await api(`/courses/${btn.dataset.delete}`, { method: "DELETE" });
+        await load();
+      });
+    });
+  }
+
+  async function load() {
+    [courses, categories] = await Promise.all([api("/courses"), api("/categories")]);
+    render();
+  }
+
+  function openModal(course) {
+    editingId = course?._id ?? null;
+    document.getElementById("modal-title").textContent = course ? "Edit course" : "New course";
+    document.getElementById("form-error").textContent = "";
+    const form = document.getElementById("course-form");
+    form.reset();
+    populateCategorySelect(course?.category);
+    if (course) {
+      for (const [key, value] of Object.entries(course)) {
+        const field = form.elements[key];
+        if (!field) continue;
+        if (key === "published") field.checked = Boolean(value);
+        else if (key === "highlights") field.value = (value || []).join("\n");
+        else field.value = value ?? "";
+      }
+    } else {
+      form.elements.published.checked = true;
+    }
+    document.getElementById("overlay").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("overlay").classList.remove("open");
+    editingId = null;
+  }
+
+  document.getElementById("new-course").addEventListener("click", () => openModal(null));
+  document.getElementById("cancel-btn").addEventListener("click", closeModal);
+  document.getElementById("overlay").addEventListener("click", (e) => {
+    if (e.target.id === "overlay") closeModal();
+  });
+
+  document.getElementById("course-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.published = form.elements.published.checked;
+    data.durationHours = data.durationHours ? Number(data.durationHours) : undefined;
+    data.price = data.price ? Number(data.price) : undefined;
+    data.enrolledCount = data.enrolledCount ? Number(data.enrolledCount) : undefined;
+    data.highlights = data.highlights ? data.highlights.split("\n").map((s) => s.trim()).filter(Boolean) : [];
+
+    try {
+      if (editingId) {
+        await api(`/courses/${editingId}`, { method: "PUT", body: JSON.stringify(data) });
+      } else {
+        await api("/courses", { method: "POST", body: JSON.stringify(data) });
+      }
+      closeModal();
+      await load();
+    } catch (err) {
+      document.getElementById("form-error").textContent = err.message;
+    }
+  });
+
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    await load();
+  })();
+</script>
+</body>
+</html>

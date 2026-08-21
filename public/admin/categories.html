@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Categories — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html">Dashboard</a>
+    <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/courses.html">Courses</a>
+    <a href="/admin/categories.html" class="active">Categories</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main">
+    <h1>Categories</h1>
+    <p class="subtitle">The categories courses can be filed under across the public site</p>
+    <div class="toolbar">
+      <button class="btn-gold" id="new-category">+ New Category</button>
+    </div>
+    <div id="table-wrap"></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <form class="modal" id="category-form" style="width:420px">
+    <h2 id="modal-title">New category</h2>
+    <div class="form-grid">
+      <div class="full">
+        <label>Name</label>
+        <input name="name" required placeholder="e.g. Agile Management" />
+      </div>
+    </div>
+    <div class="error-msg" id="form-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="cancel-btn">Cancel</button>
+      <button type="submit" class="btn-primary">Save category</button>
+    </div>
+  </form>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let categories = [];
+  let editingId = null;
+
+  function render() {
+    const wrap = document.getElementById("table-wrap");
+    if (categories.length === 0) {
+      wrap.innerHTML = `<div class="empty">No categories yet. Create the first one.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Name</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${categories.map((c) => `
+            <tr data-id="${c._id}">
+              <td>${escapeHtml(c.name)}</td>
+              <td style="white-space:nowrap">
+                <button class="btn-ghost btn-sm" data-edit="${c._id}">Edit</button>
+                <button class="btn-danger btn-sm" data-delete="${c._id}">Delete</button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+    wrap.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => openModal(categories.find((c) => c._id === btn.dataset.edit)));
+    });
+    wrap.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this category? Courses already using it keep the name as free text.")) return;
+        await api(`/categories/${btn.dataset.delete}`, { method: "DELETE" });
+        await load();
+      });
+    });
+  }
+
+  async function load() {
+    categories = await api("/categories");
+    render();
+  }
+
+  function openModal(category) {
+    editingId = category?._id ?? null;
+    document.getElementById("modal-title").textContent = category ? "Edit category" : "New category";
+    document.getElementById("form-error").textContent = "";
+    const form = document.getElementById("category-form");
+    form.reset();
+    if (category) form.elements.name.value = category.name;
+    document.getElementById("overlay").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("overlay").classList.remove("open");
+    editingId = null;
+  }
+
+  document.getElementById("new-category").addEventListener("click", () => openModal(null));
+  document.getElementById("cancel-btn").addEventListener("click", closeModal);
+  document.getElementById("overlay").addEventListener("click", (e) => {
+    if (e.target.id === "overlay") closeModal();
+  });
+
+  document.getElementById("category-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      if (editingId) {
+        await api(`/categories/${editingId}`, { method: "PUT", body: JSON.stringify(data) });
+      } else {
+        await api("/categories", { method: "POST", body: JSON.stringify(data) });
+      }
+      closeModal();
+      await load();
+    } catch (err) {
+      document.getElementById("form-error").textContent = err.message;
+    }
+  });
+
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    await load();
+  })();
+</script>
+</body>
+</html>

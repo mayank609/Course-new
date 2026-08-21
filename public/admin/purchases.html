@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Purchases — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html">Dashboard</a>
+    <a href="/admin/purchases.html" class="active">Purchases</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/courses.html">Courses</a>
+    <a href="/admin/categories.html">Categories</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main">
+    <h1>Student Purchases</h1>
+    <p class="subtitle">Complete history of direct course buys</p>
+    
+    <div class="stats" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 20px;">
+      <div class="stat-card"><div class="n" id="total-sales">—</div><div class="l">Total Transactions</div></div>
+      <div class="stat-card"><div class="n" id="total-revenue">—</div><div class="l">Total Revenue (INR)</div></div>
+    </div>
+
+    <div id="table-wrap"></div>
+  </main>
+</div>
+<script src="/admin/admin.js"></script>
+<script>
+  let purchases = [];
+
+  function render() {
+    const wrap = document.getElementById("table-wrap");
+    if (purchases.length === 0) {
+      wrap.innerHTML = `<div class="empty">No purchases recorded yet.</div>`;
+      return;
+    }
+
+    const totalRev = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+    document.getElementById("total-sales").textContent = purchases.length;
+    document.getElementById("total-revenue").textContent = "₹" + totalRev.toLocaleString();
+
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Transaction ID</th><th>Student Name</th><th>Student Email</th><th>Course</th><th>Amount</th><th>Date</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${purchases.map((p) => `
+            <tr data-id="${p._id}">
+              <td><code style="background:#eee;padding:2px 6px;border-radius:4px">${escapeHtml(p.paymentId)}</code></td>
+              <td>${escapeHtml(p.studentName)}</td>
+              <td>${escapeHtml(p.studentEmail)}</td>
+              <td class="muted">${escapeHtml(p.courseTitle)}</td>
+              <td style="font-weight:600">₹${p.amount}</td>
+              <td class="muted">${new Date(p.createdAt).toLocaleString()}</td>
+              <td><button class="btn-danger btn-sm" data-delete="${p._id}">Delete</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+
+    wrap.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this purchase transaction? This will not revoke the student access, only delete the transaction log.")) return;
+        await api(`/purchases/${btn.dataset.delete}`, { method: "DELETE" });
+        await load();
+      });
+    });
+  }
+
+  async function load() {
+    purchases = await api("/purchases");
+    render();
+  }
+
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    await load();
+  })();
+</script>
+</body>
+</html>

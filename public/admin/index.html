@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Dashboard — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+<style>
+  .stats {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+  @media (max-width: 768px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px; object-contain: fill;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html" class="active">Dashboard</a>
+    <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/courses.html">Courses</a>
+    <a href="/admin/categories.html">Categories</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main">
+    <h1>Dashboard</h1>
+    <p class="subtitle">Overview of purchases, revenue, leads and courses</p>
+    <div class="stats" id="stats">
+      <div class="stat-card"><div class="n">—</div><div class="l">Total leads</div></div>
+      <div class="stat-card"><div class="n">—</div><div class="l">New leads</div></div>
+      <div class="stat-card"><div class="n">—</div><div class="l">Total Sales</div></div>
+      <div class="stat-card"><div class="n">—</div><div class="l">Revenue (INR)</div></div>
+      <div class="stat-card"><div class="n">—</div><div class="l">Courses</div></div>
+      <div class="stat-card"><div class="n">—</div><div class="l">Categories</div></div>
+    </div>
+    <p class="subtitle">Head to <a href="/admin/purchases.html" style="color:var(--navy);font-weight:600;text-decoration:underline">Purchases</a> to monitor student buying, <a href="/admin/leads.html" style="color:var(--navy);font-weight:600;text-decoration:underline">Leads</a> to follow up on enquiries, or <a href="/admin/courses.html" style="color:var(--navy);font-weight:600;text-decoration:underline">Courses</a> to manage the catalog.</p>
+  </main>
+</div>
+<script src="/admin/admin.js"></script>
+<script>
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    const stats = await api("/stats");
+    const cards = document.querySelectorAll("#stats .stat-card .n");
+    cards[0].textContent = stats.leadCount;
+    cards[1].textContent = stats.newLeadCount;
+    cards[2].textContent = stats.purchaseCount || 0;
+    cards[3].textContent = "₹" + (stats.totalRevenue || 0).toLocaleString();
+    cards[4].textContent = stats.courseCount;
+    cards[5].textContent = stats.categoryCount;
+  })();
+</script>
+</body>
+</html>
