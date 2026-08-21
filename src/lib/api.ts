@@ -63,3 +63,12 @@ export function submitLead(payload: LeadPayload) {
     body: JSON.stringify(payload),
   });
 }
+
+export type Category = {
+  _id: string;
+  name: string;
+};
+
+export function fetchCategories() {
+  return request<Category[]>("/api/categories");
+}

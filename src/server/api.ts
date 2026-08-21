@@ -125,6 +125,11 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     return jsonWithCookie({ ok: true }, clearStudentCookieHeader());
   }
 
+  if (method === "GET" && path === "/categories") {
+    const categories = await Category.find().sort({ name: 1 });
+    return json(categories);
+  }
+
   if (method === "GET" && path === "/student/me") {
     const session = getStudentSession(request);
     if (!session) return json({ error: "Not authenticated" }, { status: 401 });

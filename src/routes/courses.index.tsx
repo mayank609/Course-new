@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdviserModal } from "@/components/site/AdviserModal";
-import { fetchCourses } from "@/lib/api";
+import { fetchCourses, fetchCategories } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
 import { sampleCourses } from "@/lib/sampleCourses";
 import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
@@ -33,11 +33,19 @@ function CoursesPage() {
     queryFn: () => fetchCourses(),
   });
 
+  const { data: dbCategories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => fetchCategories(),
+  });
+
   const source =
     courses && courses.length > 0
       ? toDisplayCourses(courses)
       : sampleToDisplayCourses(sampleCourses);
-  const categories = Array.from(new Set(source.map((c) => c.category)));
+
+  const categoriesFromCourses = source.map((c) => c.category);
+  const categoriesFromDb = dbCategories ? dbCategories.map((cat) => cat.name) : [];
+  const categories = Array.from(new Set([...categoriesFromDb, ...categoriesFromCourses]));
   const visible = category ? source.filter((c) => c.category === category) : source;
 
   return (
