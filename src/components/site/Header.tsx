@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, Menu, X, ChevronDown, User, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,9 @@ import { toast } from "sonner";
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false);
+  
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -19,6 +22,16 @@ export function Header() {
       return res.json() as Promise<{ id: string; name: string; email: string; purchasedCourses: string[] }>;
     },
     retry: false,
+  });
+
+  // Fetch categories list for dropdown
+  const { data: categories } = useQuery<{ _id: string; name: string }[]>({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/categories");
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
 
   // Logout Mutation
@@ -36,13 +49,6 @@ export function Header() {
     },
   });
 
-  const navLinks = [
-    { label: "Home", to: "/" },
-    { label: "All Courses", to: "/courses" },
-    { label: "About", to: "/about" },
-    { label: "Contact", to: "/contact" },
-  ];
-
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-border shadow-sm">
       <div className="mx-auto max-w-7xl px-4 py-3.5 flex items-center justify-between gap-4">
@@ -57,15 +63,72 @@ export function Header() {
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-          {navLinks.map((n) => (
-            <Link
-              key={n.to}
-              to={n.to}
-              className="relative py-1 text-foreground/80 hover:text-primary transition-colors after:absolute after:left-0 after:-bottom-0.5 after:h-[1.5px] after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+          <Link
+            to="/"
+            className="relative py-1 text-foreground/80 hover:text-primary transition-colors after:absolute after:left-0 after:-bottom-0.5 after:h-[1.5px] after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+          >
+            Home
+          </Link>
+
+          {/* Courses Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setShowDropdown(true)}
+            onMouseLeave={() => setShowDropdown(false)}
+          >
+            <button
+              onClick={() => navigate({ to: "/courses" })}
+              className="flex items-center gap-1 py-1 text-foreground/80 hover:text-primary transition-colors focus:outline-none cursor-pointer"
             >
-              {n.label}
-            </Link>
-          ))}
+              <span>Courses</span>
+              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showDropdown ? "rotate-180" : ""}`} />
+            </button>
+
+            {showDropdown && (
+              <div className="absolute left-0 mt-1 w-56 rounded-2xl border border-border bg-white p-3 shadow-lg animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="space-y-1">
+                  <Link
+                    to="/courses"
+                    onClick={() => setShowDropdown(false)}
+                    className="block rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-primary transition-colors"
+                  >
+                    All Courses
+                  </Link>
+                  <div className="h-px bg-border my-1" />
+                  {categories && categories.length > 0 ? (
+                    categories.map((c) => (
+                      <Link
+                        key={c._id}
+                        to="/courses"
+                        search={{ category: c.name }}
+                        onClick={() => setShowDropdown(false)}
+                        className="block rounded-lg px-3 py-2 text-sm text-foreground/80 hover:bg-secondary hover:text-primary transition-colors"
+                      >
+                        {c.name}
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-muted-foreground italic">
+                      Microsoft Office
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Link
+            to="/about"
+            className="relative py-1 text-foreground/80 hover:text-primary transition-colors after:absolute after:left-0 after:-bottom-0.5 after:h-[1.5px] after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+          >
+            About
+          </Link>
+          <Link
+            to="/contact"
+            className="relative py-1 text-foreground/80 hover:text-primary transition-colors after:absolute after:left-0 after:-bottom-0.5 after:h-[1.5px] after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+          >
+            Contact
+          </Link>
         </nav>
 
         {/* Desktop Auth Buttons */}
@@ -113,16 +176,60 @@ export function Header() {
         <div className="md:hidden border-t border-border bg-white shadow-xl animate-in slide-in-from-top duration-200">
           <div className="px-5 py-6 space-y-5">
             <nav className="flex flex-col gap-4">
-              {navLinks.map((n) => (
-                <Link
-                  key={n.to}
-                  to={n.to}
-                  onClick={() => setOpen(false)}
-                  className="text-base font-semibold py-1 text-foreground/95 hover:text-primary transition-colors"
+              <Link
+                to="/"
+                onClick={() => setOpen(false)}
+                className="text-base font-semibold py-1 text-foreground/95 hover:text-primary transition-colors"
+              >
+                Home
+              </Link>
+              
+              <div>
+                <button
+                  onClick={() => setMobileCoursesOpen(!mobileCoursesOpen)}
+                  className="flex items-center justify-between w-full text-base font-semibold py-1 text-foreground/95 hover:text-primary transition-colors focus:outline-none"
                 >
-                  {n.label}
-                </Link>
-              ))}
+                  <span>Courses</span>
+                  <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${mobileCoursesOpen ? "rotate-180" : ""}`} />
+                </button>
+                {mobileCoursesOpen && (
+                  <div className="mt-2 pl-4 border-l border-border flex flex-col gap-2.5">
+                    <Link
+                      to="/courses"
+                      onClick={() => setOpen(false)}
+                      className="text-sm py-1 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      All Courses
+                    </Link>
+                    {categories && categories.map((c) => (
+                      <Link
+                        key={c._id}
+                        to="/courses"
+                        search={{ category: c.name }}
+                        onClick={() => setOpen(false)}
+                        className="text-sm py-1 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {c.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Link
+                to="/about"
+                onClick={() => setOpen(false)}
+                className="text-base font-semibold py-1 text-foreground/95 hover:text-primary transition-colors"
+              >
+                About
+              </Link>
+              <Link
+                to="/contact"
+                onClick={() => setOpen(false)}
+                className="text-base font-semibold py-1 text-foreground/95 hover:text-primary transition-colors"
+              >
+                Contact
+              </Link>
             </nav>
 
             <div className="border-t border-border pt-4">
