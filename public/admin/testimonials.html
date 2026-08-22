@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Testimonials — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html">Dashboard</a>
+    <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/courses.html">Courses</a>
+    <a href="/admin/categories.html">Categories</a>
+    <a href="/admin/testimonials.html" class="active">Testimonials</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main">
+    <h1>Testimonials</h1>
+    <p class="subtitle">Manage customer testimonials shown on the website</p>
+    <div class="toolbar">
+      <button class="btn-gold" id="new-testimonial">+ New Testimonial</button>
+    </div>
+    <div id="table-wrap"></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <form class="modal" id="testimonial-form" style="width: 500px">
+    <h2 id="modal-title">New testimonial</h2>
+    <div class="form-grid">
+      <div>
+        <label>Student Name</label>
+        <input name="name" required placeholder="e.g. Neha Kapoor" />
+      </div>
+      <div>
+        <label>Role</label>
+        <input name="role" required placeholder="e.g. MIS Executive" />
+      </div>
+      <div>
+        <label>Company / Organization</label>
+        <input name="company" placeholder="e.g. HDFC Life" />
+      </div>
+      <div>
+        <label>Rating (1-5)</label>
+        <input name="rating" type="number" min="1" max="5" value="5" required />
+      </div>
+      <div class="full">
+        <label>Avatar / Photo URL</label>
+        <input name="avatarUrl" placeholder="https://... /photo.jpg" />
+      </div>
+      <div class="full">
+        <label>Video Testimonial URL (Optional)</label>
+        <input name="videoUrl" placeholder="e.g. https://www.youtube.com/watch?v=... or YouTube Embed ID" />
+      </div>
+      <div class="full">
+        <label>Testimonial Text</label>
+        <textarea name="text" rows="4" required placeholder="Write the testimonial comment here..."></textarea>
+      </div>
+      <div class="full checkbox-row">
+        <input type="checkbox" name="published" id="published" checked />
+        <label for="published" style="margin:0">Published (visible on website)</label>
+      </div>
+    </div>
+    <div class="error-msg" id="form-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="cancel-btn">Cancel</button>
+      <button type="submit" class="btn-primary">Save testimonial</button>
+    </div>
+  </form>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let testimonials = [];
+  let editingId = null;
+
+  function render() {
+    const wrap = document.getElementById("table-wrap");
+    if (testimonials.length === 0) {
+      wrap.innerHTML = `<div class="empty">No testimonials yet. Create the first one.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Student</th><th>Role & Company</th><th>Rating</th><th>Has Video?</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${testimonials.map((t) => `
+            <tr data-id="${t._id}">
+              <td style="display:flex;align-items:center;gap:10px">
+                ${t.avatarUrl ? `<img src="${escapeHtml(t.avatarUrl)}" style="width:32px;height:32px;border-radius:50%;object-cover:true;" />` : `<div style="width:32px;height:32px;border-radius:50%;background:#e8c477;color:#fff;display:grid;place-items:center;font-weight:bold;">${escapeHtml(t.name[0])}</div>`}
+                <span>${escapeHtml(t.name)}</span>
+              </td>
+              <td>${escapeHtml(t.role)} ${t.company ? `at ${escapeHtml(t.company)}` : ''}</td>
+              <td style="color:#e8c477">★ ${t.rating ?? 5}</td>
+              <td>${t.videoUrl ? '<span style="color:var(--gold);font-weight:600">Yes (🎥)</span>' : '<span class="muted">No</span>'}</td>
+              <td>${t.published ? '<span class="badge badge-contacted">Published</span>' : '<span class="badge badge-closed">Draft</span>'}</td>
+              <td style="white-space:nowrap">
+                <button class="btn-ghost btn-sm" data-edit="${t._id}">Edit</button>
+                <button class="btn-danger btn-sm" data-delete="${t._id}">Delete</button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+    wrap.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => openModal(testimonials.find((t) => t._id === btn.dataset.edit)));
+    });
+    wrap.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this testimonial?")) return;
+        await api(`/testimonials/${btn.dataset.delete}`, { method: "DELETE" });
+        await load();
+      });
+    });
+  }
+
+  async function load() {
+    testimonials = await api("/testimonials");
+    render();
+  }
+
+  function openModal(t) {
+    editingId = t?._id ?? null;
+    document.getElementById("modal-title").textContent = t ? "Edit testimonial" : "New testimonial";
+    document.getElementById("form-error").textContent = "";
+    const form = document.getElementById("testimonial-form");
+    form.reset();
+    if (t) {
+      for (const [key, value] of Object.entries(t)) {
+        const field = form.elements[key];
+        if (!field) continue;
+        if (key === "published") field.checked = Boolean(value);
+        else field.value = value ?? "";
+      }
+    } else {
+      form.elements.published.checked = true;
+      form.elements.rating.value = 5;
+    }
+    document.getElementById("overlay").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("overlay").classList.remove("open");
+    editingId = null;
+  }
+
+  document.getElementById("new-testimonial").addEventListener("click", () => openModal(null));
+  document.getElementById("cancel-btn").addEventListener("click", closeModal);
+  document.getElementById("overlay").addEventListener("click", (e) => {
+    if (e.target.id === "overlay") closeModal();
+  });
+
+  document.getElementById("testimonial-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.published = form.elements.published.checked;
+    data.rating = data.rating ? Number(data.rating) : 5;
+
+    try {
+      if (editingId) {
+        await api(`/testimonials/${editingId}`, { method: "PUT", body: JSON.stringify(data) });
+      } else {
+        await api("/testimonials", { method: "POST", body: JSON.stringify(data) });
+      }
+      closeModal();
+      await load();
+    } catch (err) {
+      document.getElementById("form-error").textContent = err.message;
+    }
+  });
+
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    await load();
+  })();
+</script>
+</body>
+</html>

@@ -15,6 +15,7 @@ const courseSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     highlights: { type: [String], default: [] },
     imageUrl: { type: String, default: "" },
+    syllabusUrl: { type: String, default: "" },
     published: { type: Boolean, default: true },
   },
   { timestamps: true },

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Users, TrendingUp } from "lucide-react";
+import { Clock, Users, TrendingUp, Search } from "lucide-react";
 import { z } from "zod";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -23,6 +23,7 @@ function CoursesPage() {
   const { open: openAdviser } = useAdviserModal();
   const { category: initialCategory } = Route.useSearch();
   const [category, setCategory] = useState<string | null>(initialCategory ?? null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setCategory(initialCategory ?? null);
@@ -46,7 +47,16 @@ function CoursesPage() {
   const categoriesFromCourses = source.map((c) => c.category);
   const categoriesFromDb = dbCategories ? dbCategories.map((cat) => cat.name) : [];
   const categories = Array.from(new Set([...categoriesFromDb, ...categoriesFromCourses]));
-  const visible = category ? source.filter((c) => c.category === category) : source;
+  
+  let visible = category ? source.filter((c) => c.category === category) : source;
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase().trim();
+    visible = visible.filter(
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        (c.category && c.category.toLowerCase().includes(q))
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,6 +71,27 @@ function CoursesPage() {
               All Courses
             </h1>
             <p className="mt-2 text-muted-foreground">Browse every certification we offer.</p>
+          </div>
+
+          <div className="mt-8 mx-auto max-w-md">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search courses or syllabus..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-12 py-3 rounded-full border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm transition-all text-foreground"
+              />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           {categories.length > 0 && (

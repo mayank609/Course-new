@@ -5,6 +5,7 @@ import { connectDB } from "../src/server/db";
 import { Admin } from "../src/server/models/Admin";
 import { Course } from "../src/server/models/Course";
 import { Category } from "../src/server/models/Category";
+import { Testimonial } from "../src/server/models/Testimonial";
 
 function slugify(title: string): string {
   return title
@@ -113,6 +114,50 @@ async function seed() {
     await Category.create({ name });
   }
   console.log(`Seeded ${categories.length} categories`);
+
+  await Testimonial.deleteMany({});
+  const initialTestimonials = [
+    {
+      name: "Neha Kapoor",
+      role: "MIS Executive",
+      company: "HDFC Life",
+      rating: 5,
+      text: "Shubham sir's Excel training completely changed how I work. I went from knowing nothing to confidently building pivot reports for my entire department. Got promoted within 4 months.",
+      avatarUrl: "",
+      videoUrl: "",
+    },
+    {
+      name: "Rahul Sinha",
+      role: "Operations Analyst",
+      company: "Infosys",
+      rating: 5,
+      text: "The way he explains complex topics in simple language is unlike any other trainer. I had failed to learn Excel from 3 other courses. Here I understood everything — and landed my first job.",
+      avatarUrl: "",
+      videoUrl: "",
+    },
+    {
+      name: "Megha Patil",
+      role: "Business Analyst",
+      company: "TCS",
+      rating: 5,
+      text: "The AI module was a revelation. I now use Copilot every single day. The bonus Job Skills section helped me crack 3 interviews back to back. This is genuinely the most practical training I've done.",
+      avatarUrl: "",
+      videoUrl: "",
+    },
+    {
+      name: "Riya Sharma",
+      role: "Team Lead - MIS",
+      company: "Sarvpratham Alum",
+      rating: 5,
+      text: "This course has been a game-changer for me. The content is engaging, informative, and relevant to my career goals. I highly recommend it!",
+      avatarUrl: "",
+      videoUrl: "",
+    },
+  ];
+  for (const t of initialTestimonials) {
+    await Testimonial.create(t);
+  }
+  console.log(`Seeded ${initialTestimonials.length} testimonials`);
 
   await mongoose.disconnect();
 }

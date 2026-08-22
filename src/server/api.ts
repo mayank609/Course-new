@@ -6,6 +6,7 @@ import { Admin } from "./models/Admin";
 import { Lead, LEAD_SOURCE_VALUES } from "./models/Lead";
 import { Student } from "./models/Student";
 import { Purchase } from "./models/Purchase";
+import { Testimonial } from "./models/Testimonial";
 import {
   adminCookieHeader,
   clearAdminCookieHeader,
@@ -67,6 +68,11 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const course = await Course.findOne({ slug: courseMatch[1], published: true });
     if (!course) return json({ error: "Course not found" }, { status: 404 });
     return json(course);
+  }
+
+  if (method === "GET" && path === "/testimonials") {
+    const list = await Testimonial.find({ published: true }).sort({ createdAt: -1 });
+    return json(list);
   }
 
   if (method === "POST" && path === "/leads") {
@@ -365,6 +371,39 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   if (method === "DELETE" && purchaseIdMatch) {
     const purchase = await Purchase.findByIdAndDelete(purchaseIdMatch[1]);
     if (!purchase) return json({ error: "Purchase not found" }, { status: 404 });
+    return json({ ok: true });
+  }
+
+  // --- Testimonials CRUD ---
+
+  if (method === "GET" && path === "/testimonials") {
+    const list = await Testimonial.find().sort({ createdAt: -1 });
+    return json(list);
+  }
+
+  if (method === "POST" && path === "/testimonials") {
+    const body = (await readJson(request)) as Record<string, unknown>;
+    if (!body.name || !body.role || !body.text) {
+      return json({ error: "name, role and text are required" }, { status: 400 });
+    }
+    const item = await Testimonial.create(body);
+    return json(item, { status: 201 });
+  }
+
+  const testimonialIdMatch = path.match(/^\/testimonials\/([^/]+)$/);
+  if (method === "PUT" && testimonialIdMatch) {
+    const body = (await readJson(request)) as Record<string, unknown>;
+    const item = await Testimonial.findByIdAndUpdate(testimonialIdMatch[1], body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!item) return json({ error: "Testimonial not found" }, { status: 404 });
+    return json(item);
+  }
+
+  if (method === "DELETE" && testimonialIdMatch) {
+    const item = await Testimonial.findByIdAndDelete(testimonialIdMatch[1]);
+    if (!item) return json({ error: "Testimonial not found" }, { status: 404 });
     return json({ ok: true });
   }
 

@@ -10,6 +10,7 @@ export type DisplayCourse = {
   enrolledCount: number;
   slug?: string;
   imageUrl?: string;
+  syllabusUrl?: string;
 };
 
 export function toDisplayCourses(courses: Course[]): DisplayCourse[] {
@@ -22,6 +23,7 @@ export function toDisplayCourses(courses: Course[]): DisplayCourse[] {
     enrolledCount: c.enrolledCount,
     slug: c.slug,
     imageUrl: c.imageUrl,
+    syllabusUrl: c.syllabusUrl,
   }));
 }
 

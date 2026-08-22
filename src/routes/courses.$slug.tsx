@@ -146,6 +146,18 @@ function CourseDetailPage() {
                   </Button>
                 )}
 
+                {course.syllabusUrl && (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full rounded-full py-6 font-semibold border-primary/30 text-primary hover:-translate-y-0.5 transition-transform"
+                  >
+                    <a href={course.syllabusUrl} target="_blank" rel="noopener noreferrer">
+                      Download Syllabus
+                    </a>
+                  </Button>
+                )}
+
                 <div className="border-t border-border pt-4">
                   <p className="text-xs font-semibold text-muted-foreground mb-3 text-center">
                     Have questions? Submit an enquiry

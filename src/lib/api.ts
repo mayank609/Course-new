@@ -13,6 +13,7 @@ export type Course = {
   description: string;
   highlights: string[];
   imageUrl: string;
+  syllabusUrl?: string;
   published: boolean;
 };
 
