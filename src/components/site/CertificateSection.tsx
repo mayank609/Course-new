@@ -51,7 +51,7 @@ export function CertificateSection() {
             
             <div className="relative group max-w-lg w-full rounded-2xl overflow-hidden shadow-2xl border border-border/80 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(232,196,119,0.15)] bg-white p-2">
               <img
-                src="/certificate-sample.png"
+                src="/Cert1.webp"
                 alt="Sarvpratham Analytics Certificate of Completion"
                 className="w-full h-auto object-contain rounded-lg transition-transform duration-500 group-hover:scale-[1.01]"
               />
