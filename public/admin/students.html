@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Students — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html">Dashboard</a>
+    <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/students.html" class="active">Students</a>
+    <a href="/admin/courses.html">Courses</a>
+    <a href="/admin/categories.html">Categories</a>
+    <a href="/admin/testimonials.html">Testimonials</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main">
+    <h1>Students Directory</h1>
+    <p class="subtitle">Complete directory of students registered on the platform</p>
+    <div id="table-wrap"></div>
+  </main>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let students = [];
+
+  function render() {
+    const wrap = document.getElementById("table-wrap");
+    if (students.length === 0) {
+      wrap.innerHTML = `<div class="empty">No registered students yet.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Phone</th><th>Purchased Courses</th><th>Registered</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${students.map((s) => `
+            <tr data-id="${s._id}">
+              <td style="font-weight:600">${escapeHtml(s.name)}</td>
+              <td>${escapeHtml(s.email)}</td>
+              <td>${escapeHtml(s.phone) || "—"}</td>
+              <td>
+                ${(s.purchasedCourses || []).length > 0 
+                  ? (s.purchasedCourses || []).map(slug => `<span class="badge badge-contacted" style="margin-right:4px">${escapeHtml(slug)}</span>`).join("")
+                  : '<span class="muted">None yet</span>'
+                }
+              </td>
+              <td class="muted">${new Date(s.createdAt).toLocaleDateString()}</td>
+              <td><button class="btn-danger btn-sm" data-delete="${s._id}">Delete</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+
+    wrap.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this student account? All access will be revoked.")) return;
+        await api(`/students/${btn.dataset.delete}`, { method: "DELETE" });
+        await load();
+      });
+    });
+  }
+
+  async function load() {
+    students = await api("/students");
+    render();
+  }
+
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    await load();
+  })();
+</script>
+</body>
+</html>

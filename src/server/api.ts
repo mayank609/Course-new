@@ -225,19 +225,31 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   }
 
   if (method === "GET" && path === "/stats") {
-    const [courseCount, leadCount, newLeadCount, categoryCount, purchaseCount, revenueResult] = await Promise.all([
+    const [courseCount, leadCount, newLeadCount, categoryCount, purchaseCount, studentCount, revenueResult, monthlyRevenue] = await Promise.all([
       Course.countDocuments(),
       Lead.countDocuments(),
       Lead.countDocuments({ status: "new" }),
       Category.countDocuments(),
       Purchase.countDocuments({ status: "completed" }),
+      Student.countDocuments(),
       Purchase.aggregate([
         { $match: { status: "completed" } },
         { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      Purchase.aggregate([
+        { $match: { status: "completed" } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+            revenue: { $sum: "$amount" },
+            sales: { $sum: 1 }
+          }
+        },
+        { $sort: { "_id": 1 } }
       ])
     ]);
     const totalRevenue = revenueResult[0]?.total ?? 0;
-    return json({ courseCount, leadCount, newLeadCount, categoryCount, purchaseCount, totalRevenue });
+    return json({ courseCount, leadCount, newLeadCount, categoryCount, purchaseCount, studentCount, totalRevenue, monthlyRevenue });
   }
 
   // --- Courses CRUD ---
@@ -371,6 +383,20 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   if (method === "DELETE" && purchaseIdMatch) {
     const purchase = await Purchase.findByIdAndDelete(purchaseIdMatch[1]);
     if (!purchase) return json({ error: "Purchase not found" }, { status: 404 });
+    return json({ ok: true });
+  }
+
+  // --- Students CRUD ---
+
+  if (method === "GET" && path === "/students") {
+    const list = await Student.find().select("-passwordHash").sort({ createdAt: -1 });
+    return json(list);
+  }
+
+  const studentIdMatch = path.match(/^\/students\/([^/]+)$/);
+  if (method === "DELETE" && studentIdMatch) {
+    const student = await Student.findByIdAndDelete(studentIdMatch[1]);
+    if (!student) return json({ error: "Student not found" }, { status: 404 });
     return json({ ok: true });
   }
 
