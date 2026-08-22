@@ -71,7 +71,7 @@ function CheckoutPage() {
     },
     onSuccess: () => {
       toast.success("Course purchased successfully! Happy learning!");
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/thank-you", search: { course: course?.title || slug } });
     },
     onError: (err) => {
       toast.error((err as Error).message || "Transaction failed");

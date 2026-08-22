@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ThankYouRouteImport } from './routes/thank-you'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
@@ -28,6 +29,11 @@ import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as BlogsSlugRouteImport } from './routes/blogs.$slug'
 
+const ThankYouRoute = ThankYouRouteImport.update({
+  id: '/thank-you',
+  path: '/thank-you',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/terms': typeof TermsRoute
+  '/thank-you': typeof ThankYouRoute
   '/blogs/$slug': typeof BlogsSlugRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/terms': typeof TermsRoute
+  '/thank-you': typeof ThankYouRoute
   '/blogs/$slug': typeof BlogsSlugRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/register': typeof RegisterRoute
   '/terms': typeof TermsRoute
+  '/thank-you': typeof ThankYouRoute
   '/blogs/$slug': typeof BlogsSlugRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/register'
     | '/terms'
+    | '/thank-you'
     | '/blogs/$slug'
     | '/checkout/$slug'
     | '/courses/$slug'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/register'
     | '/terms'
+    | '/thank-you'
     | '/blogs/$slug'
     | '/checkout/$slug'
     | '/courses/$slug'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/register'
     | '/terms'
+    | '/thank-you'
     | '/blogs/$slug'
     | '/checkout/$slug'
     | '/courses/$slug'
@@ -255,6 +267,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   RegisterRoute: typeof RegisterRoute
   TermsRoute: typeof TermsRoute
+  ThankYouRoute: typeof ThankYouRoute
   BlogsSlugRoute: typeof BlogsSlugRoute
   CheckoutSlugRoute: typeof CheckoutSlugRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
@@ -266,6 +279,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/thank-you': {
+      id: '/thank-you'
+      path: '/thank-you'
+      fullPath: '/thank-you'
+      preLoaderRoute: typeof ThankYouRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -407,6 +427,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   RegisterRoute: RegisterRoute,
   TermsRoute: TermsRoute,
+  ThankYouRoute: ThankYouRoute,
   BlogsSlugRoute: BlogsSlugRoute,
   CheckoutSlugRoute: CheckoutSlugRoute,
   CoursesSlugRoute: CoursesSlugRoute,
