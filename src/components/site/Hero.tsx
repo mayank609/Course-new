@@ -70,13 +70,13 @@ export function Hero() {
         <div className="pointer-events-none absolute bottom-0 right-0 h-56 w-56 rounded-full bg-[color:var(--brand-gold)]/15 blur-3xl" />
         
         {/* Carousel slide content viewport */}
-        <div className="relative min-h-[460px] md:min-h-[420px] lg:min-h-[460px] flex items-center">
+        <div className="relative grid">
           {slides.map((slide, idx) => {
             const isActive = idx === currentSlide;
             return (
               <div
                 key={idx}
-                className={`w-full grid lg:grid-cols-2 gap-10 items-center transition-all duration-700 ease-in-out absolute inset-0 ${
+                className={`col-start-1 row-start-1 w-full grid lg:grid-cols-2 gap-10 items-center transition-all duration-700 ease-in-out ${
                   isActive ? "opacity-100 scale-100 translate-x-0 pointer-events-auto z-10" : "opacity-0 scale-95 translate-x-12 pointer-events-none z-0"
                 }`}
               >

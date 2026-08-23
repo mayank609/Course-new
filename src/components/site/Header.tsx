@@ -55,9 +55,9 @@ export function Header() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0 group">
           <img
-            src="/sarvpratham-logo.png"
+            src="/sarvpratham-logo-full.jpg"
             alt="Sarvpratham Analytics"
-            className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-102"
+            className="h-12 sm:h-16 w-auto object-contain rounded-md transition-transform duration-300 group-hover:scale-102"
           />
         </Link>
 
