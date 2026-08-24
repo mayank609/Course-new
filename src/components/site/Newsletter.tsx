@@ -40,7 +40,7 @@ export function Newsletter() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
-            className="flex-1 rounded-full px-5 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-gold)]/60 transition-shadow"
+            className="flex-1 rounded-full px-5 py-3 bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-gold)]/60 transition-shadow"
           />
           <Button
             type="submit"
