@@ -1,20 +1,20 @@
-import { Sparkles, Star, ChevronLeft, ChevronRight, Award, TrendingUp, CheckCircle } from "lucide-react";
+import { Sparkles, Star, ChevronLeft, ChevronRight, Award, TrendingUp, CheckCircle, User } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/site/Reveal";
 import { useState, useEffect } from "react";
 
 const companies = [
-  "MIQ",
-  "SIEMENS",
-  "TCS",
-  "Tech Mahindra",
-  "Infosys",
-  "Accenture",
-  "Wipro",
-  "Cognizant",
-  "Capgemini",
-  "HCLTech",
+  { name: "MIQ", logo: "/logos/miq.png" },
+  { name: "Siemens", logo: "/logos/siemens.svg" },
+  { name: "TCS", logo: "/logos/tcs.svg" },
+  { name: "Tech Mahindra", logo: "/logos/tech-mahindra.svg" },
+  { name: "Infosys", logo: "/logos/infosys.svg" },
+  { name: "Accenture", logo: "/logos/accenture.svg" },
+  { name: "Wipro", logo: "/logos/wipro.svg" },
+  { name: "Cognizant", logo: "/logos/cognizant.svg" },
+  { name: "Capgemini", logo: "/logos/capgemini.svg" },
+  { name: "HCLTech", logo: "/logos/hcltech.svg" },
 ];
 
 export function Hero() {
@@ -179,8 +179,10 @@ export function Hero() {
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-9 w-9 rounded-full border-2 border-white bg-[image:var(--gradient-primary)] transition-transform hover:-translate-y-1 hover:scale-110 hover:z-10"
-                />
+                  className="h-9 w-9 grid place-items-center rounded-full border-2 border-white bg-[image:var(--gradient-primary)] text-white transition-transform hover:-translate-y-1 hover:scale-110 hover:z-10"
+                >
+                  <User className="h-4.5 w-4.5 fill-current" />
+                </div>
               ))}
             </div>
             <div className="text-sm">
@@ -234,15 +236,16 @@ export function Hero() {
             {[0, 1].map((copy) => (
               <div
                 key={copy}
-                className="flex items-center gap-10 pr-10 text-sm font-bold text-muted-foreground/70 shrink-0"
+                className="flex items-center gap-10 pr-10 shrink-0"
               >
                 {companies.map((c) => (
-                  <span
-                    key={`${copy}-${c}`}
-                    className="whitespace-nowrap transition-colors hover:text-[color:var(--brand-gold-foreground)]"
-                  >
-                    {c}
-                  </span>
+                  <img
+                    key={`${copy}-${c.name}`}
+                    src={c.logo}
+                    alt={c.name}
+                    title={c.name}
+                    className="h-6 sm:h-7 w-auto max-w-[110px] object-contain shrink-0 transition-transform duration-300 hover:scale-110"
+                  />
                 ))}
               </div>
             ))}
