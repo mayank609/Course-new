@@ -1,4 +1,4 @@
-import { Sparkles, Star, ChevronLeft, ChevronRight, Award, TrendingUp, CheckCircle, User } from "lucide-react";
+import { Sparkles, Star, ChevronLeft, ChevronRight, Award, TrendingUp, CheckCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/site/Reveal";
@@ -176,13 +176,13 @@ export function Hero() {
           {/* Trust Indicators */}
           <div className="flex items-center gap-4">
             <div className="flex -space-x-2">
-              {[0, 1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-9 w-9 grid place-items-center rounded-full border-2 border-white bg-[image:var(--gradient-primary)] text-white transition-transform hover:-translate-y-1 hover:scale-110 hover:z-10"
-                >
-                  <User className="h-4.5 w-4.5 fill-current" />
-                </div>
+              {["aarav", "priya", "rohan", "sneha"].map((name) => (
+                <img
+                  key={name}
+                  src={`/avatars/${name}.png`}
+                  alt="Student avatar"
+                  className="h-9 w-9 rounded-full border-2 border-white object-cover transition-transform hover:-translate-y-1 hover:scale-110 hover:z-10"
+                />
               ))}
             </div>
             <div className="text-sm">
