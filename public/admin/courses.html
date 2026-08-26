@@ -98,8 +98,8 @@
         <textarea name="highlights" rows="4"></textarea>
       </div>
       <div class="full">
-        <label>Bundled courses (granted free to the student along with this course &mdash; hold Ctrl/Cmd to pick 2&ndash;3)</label>
-        <select name="bundledCourses" id="bundled-select" multiple size="6"></select>
+        <label>Recommended courses (shown as paid add-ons the student can also buy at checkout &mdash; hold Ctrl/Cmd to pick 2&ndash;3)</label>
+        <select name="recommendedCourses" id="recommended-select" multiple size="6"></select>
       </div>
       <div class="full checkbox-row">
         <input type="checkbox" name="published" id="published" checked />
@@ -129,8 +129,8 @@
       names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
   }
 
-  function populateBundledSelect(excludeId, selectedSlugs) {
-    const select = document.getElementById("bundled-select");
+  function populateRecommendedSelect(excludeId, selectedSlugs) {
+    const select = document.getElementById("recommended-select");
     const options = courses.filter((c) => c._id !== excludeId);
     select.innerHTML = options
       .map((c) => `<option value="${escapeHtml(c.slug)}">${escapeHtml(c.title)}</option>`)
@@ -193,14 +193,14 @@
     const form = document.getElementById("course-form");
     form.reset();
     populateCategorySelect(course?.category);
-    populateBundledSelect(course?._id, course?.bundledCourses);
+    populateRecommendedSelect(course?._id, course?.recommendedCourses);
     if (course) {
       for (const [key, value] of Object.entries(course)) {
         const field = form.elements[key];
         if (!field) continue;
         if (key === "published") field.checked = Boolean(value);
         else if (key === "highlights") field.value = (value || []).join("\n");
-        else if (key === "bundledCourses") continue; // handled by populateBundledSelect
+        else if (key === "recommendedCourses") continue; // handled by populateRecommendedSelect
         else field.value = value ?? "";
       }
     } else {
@@ -229,7 +229,7 @@
     data.price = data.price ? Number(data.price) : undefined;
     data.enrolledCount = data.enrolledCount ? Number(data.enrolledCount) : undefined;
     data.highlights = data.highlights ? data.highlights.split("\n").map((s) => s.trim()).filter(Boolean) : [];
-    data.bundledCourses = Array.from(form.elements.bundledCourses.selectedOptions).map((o) => o.value);
+    data.recommendedCourses = Array.from(form.elements.recommendedCourses.selectedOptions).map((o) => o.value);
 
     try {
       if (editingId) {

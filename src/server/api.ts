@@ -71,10 +71,10 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
   if (method === "GET" && courseMatch) {
     const course = await Course.findOne({ slug: courseMatch[1], published: true });
     if (!course) return json({ error: "Course not found" }, { status: 404 });
-    const bundledCourseDetails = course.bundledCourses?.length
-      ? await Course.find({ slug: { $in: course.bundledCourses }, published: true })
+    const recommendedCourseDetails = course.recommendedCourses?.length
+      ? await Course.find({ slug: { $in: course.recommendedCourses }, published: true })
       : [];
-    return json({ ...course.toObject(), bundledCourseDetails });
+    return json({ ...course.toObject(), recommendedCourseDetails });
   }
 
   if (method === "GET" && path === "/testimonials") {
@@ -222,9 +222,9 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const session = getStudentSession(request);
     if (!session) return json({ error: "Not authenticated" }, { status: 401 });
     const body = await readJson(request);
-    const { courseSlug } = body as { courseSlug?: string };
+    const { courseSlug, addonSlugs } = body as { courseSlug?: string; addonSlugs?: string[] };
     if (!courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
-    
+
     const course = await Course.findOne({ slug: courseSlug });
     if (!course) return json({ error: "Course not found" }, { status: 404 });
 
@@ -250,42 +250,39 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     });
 
     student.purchasedCourses.push(course.slug);
-
-    // Increment enrolled count
     course.enrolledCount = (course.enrolledCount || 0) + 1;
     await course.save();
 
-    // Grant any bundled courses attached to this course for free
-    const bundledPurchases = [];
-    if (course.bundledCourses?.length) {
-      const bundledCourses = await Course.find({
-        slug: { $in: course.bundledCourses },
-        published: true,
-      });
-      for (const bundled of bundledCourses) {
-        if (student.purchasedCourses.includes(bundled.slug)) continue;
-        student.purchasedCourses.push(bundled.slug);
-        bundledPurchases.push(
+    // Any recommended add-on courses the student chose to purchase alongside this one
+    const addonPurchases = [];
+    const requestedAddonSlugs = (addonSlugs ?? []).filter(
+      (slug) => slug !== course.slug && !student.purchasedCourses.includes(slug)
+    );
+    if (requestedAddonSlugs.length) {
+      const addonCourses = await Course.find({ slug: { $in: requestedAddonSlugs }, published: true });
+      for (const addon of addonCourses) {
+        student.purchasedCourses.push(addon.slug);
+        addonPurchases.push(
           await Purchase.create({
             studentId: student._id,
             studentName: student.name,
             studentEmail: student.email,
-            courseSlug: bundled.slug,
-            courseTitle: bundled.title,
-            amount: 0,
-            currency: bundled.currency,
+            courseSlug: addon.slug,
+            courseTitle: addon.title,
+            amount: addon.price,
+            currency: addon.currency,
             status: "completed",
-            paymentId: `bundle_${mockPaymentId}`,
+            paymentId: `${mockPaymentId}_addon`,
           })
         );
-        bundled.enrolledCount = (bundled.enrolledCount || 0) + 1;
-        await bundled.save();
+        addon.enrolledCount = (addon.enrolledCount || 0) + 1;
+        await addon.save();
       }
     }
 
     await student.save();
 
-    return json({ purchase, bundledPurchases, ok: true }, { status: 201 });
+    return json({ purchase, addonPurchases, ok: true }, { status: 201 });
   }
 
   return json({ error: "Not found" }, { status: 404 });

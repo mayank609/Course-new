@@ -55,13 +55,30 @@ function CheckoutPage() {
     }
   }, [isProfileError, navigate, slug]);
 
+  const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
+
+  function toggleAddon(addonSlug: string) {
+    setSelectedAddons((prev) => {
+      const next = new Set(prev);
+      if (next.has(addonSlug)) next.delete(addonSlug);
+      else next.add(addonSlug);
+      return next;
+    });
+  }
+
+  const selectedAddonCourses = (course?.recommendedCourseDetails ?? []).filter((rec) =>
+    selectedAddons.has(rec.slug)
+  );
+  const addonsTotal = selectedAddonCourses.reduce((sum, rec) => sum + rec.price, 0);
+  const totalAmount = (course?.price ?? 0) + addonsTotal;
+
   // Buy course mutation
   const purchaseMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseSlug: slug }),
+        body: JSON.stringify({ courseSlug: slug, addonSlugs: Array.from(selectedAddons) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -154,34 +171,45 @@ function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Bundled courses included free */}
-                {course.bundledCourseDetails && course.bundledCourseDetails.length > 0 && (
+                {/* Recommended add-on courses the student can also buy */}
+                {course.recommendedCourseDetails && course.recommendedCourseDetails.length > 0 && (
                   <div className="space-y-3 border-b border-border pb-6">
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      This Bundle Also Includes
+                      Frequently Bought Together
                     </h3>
                     <div className="space-y-2">
-                      {course.bundledCourseDetails.map((bundled) => (
-                        <div
-                          key={bundled.slug}
-                          className="flex items-center gap-3 p-2.5 bg-emerald-500/5 border border-emerald-500/10 rounded-xl"
-                        >
-                          <div className="w-14 aspect-video rounded-md overflow-hidden shrink-0">
-                            <img
-                              src={getCourseImage(bundled.category, bundled.imageUrl)}
-                              alt={bundled.title}
-                              className="h-full w-full object-cover"
+                      {course.recommendedCourseDetails.map((rec) => {
+                        const checked = selectedAddons.has(rec.slug);
+                        return (
+                          <label
+                            key={rec.slug}
+                            className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-colors ${
+                              checked ? "bg-primary/5 border-primary/20" : "bg-muted/20 border-border hover:bg-muted/30"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleAddon(rec.slug)}
+                              className="h-4 w-4 shrink-0 accent-primary"
                             />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold truncate">{bundled.title}</p>
-                            <p className="text-xs text-muted-foreground">{bundled.durationHours} hrs content</p>
-                          </div>
-                          <span className="shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded-full uppercase">
-                            Free
-                          </span>
-                        </div>
-                      ))}
+                            <div className="w-14 aspect-video rounded-md overflow-hidden shrink-0">
+                              <img
+                                src={getCourseImage(rec.category, rec.imageUrl)}
+                                alt={rec.title}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold truncate">{rec.title}</p>
+                              <p className="text-xs text-muted-foreground">{rec.durationHours} hrs content</p>
+                            </div>
+                            <span className="shrink-0 text-sm font-bold text-primary">
+                              +₹{rec.price}
+                            </span>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -214,16 +242,22 @@ function CheckoutPage() {
 
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Course Subtotal</span>
+                    <span className="text-muted-foreground">{course.title}</span>
                     <span>₹{course.price}</span>
                   </div>
+                  {selectedAddonCourses.map((rec) => (
+                    <div key={rec.slug} className="flex justify-between">
+                      <span className="text-muted-foreground truncate pr-2">{rec.title}</span>
+                      <span>₹{rec.price}</span>
+                    </div>
+                  ))}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Platform Fee</span>
                     <span className="text-emerald-600 font-medium">Free</span>
                   </div>
                   <div className="flex justify-between border-t border-border pt-4 text-base font-bold">
                     <span>Total Amount</span>
-                    <span className="text-primary">₹{course.price}</span>
+                    <span className="text-primary">₹{totalAmount}</span>
                   </div>
                 </div>
 
@@ -261,7 +295,7 @@ function CheckoutPage() {
                     onClick={handlePayment}
                     className="w-full rounded-full py-6 text-base font-semibold shadow-[var(--shadow-elegant)] hover:-translate-y-0.5 transition-transform"
                   >
-                    <CreditCard className="h-5 w-5 mr-2" /> Pay ₹{course.price} (Mock Payment)
+                    <CreditCard className="h-5 w-5 mr-2" /> Pay ₹{totalAmount} (Mock Payment)
                   </Button>
                 )}
 

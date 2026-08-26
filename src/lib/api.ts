@@ -12,8 +12,8 @@ export type Course = {
   shortDescription: string;
   description: string;
   highlights: string[];
-  bundledCourses: string[];
-  bundledCourseDetails?: Course[];
+  recommendedCourses: string[];
+  recommendedCourseDetails?: Course[];
   imageUrl: string;
   syllabusUrl?: string;
   published: boolean;

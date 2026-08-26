@@ -14,7 +14,7 @@ const courseSchema = new mongoose.Schema(
     shortDescription: { type: String, default: "" },
     description: { type: String, default: "" },
     highlights: { type: [String], default: [] },
-    bundledCourses: { type: [String], default: [] }, // Slugs of other courses granted free with this one
+    recommendedCourses: { type: [String], default: [] }, // Slugs of other courses to upsell at checkout
     imageUrl: { type: String, default: "" },
     syllabusUrl: { type: String, default: "" },
     published: { type: Boolean, default: true },
