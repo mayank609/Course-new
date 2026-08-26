@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AdviserModalProvider } from "@/components/site/AdviserModal";
 import { PurchasePopup } from "@/components/site/PurchasePopup";
+import { MetaPixel, useMetaPixelPageViews } from "@/components/site/MetaPixel";
 
 function NotFoundComponent() {
   return (
@@ -122,6 +123,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <MetaPixel />
       </head>
       <body>
         {children}
@@ -133,6 +135,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useMetaPixelPageViews();
 
   return (
     <QueryClientProvider client={queryClient}>
