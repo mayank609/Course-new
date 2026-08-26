@@ -35,13 +35,11 @@ export function Footer() {
         {/* Brand & Socials Column */}
         <div>
           <Link to="/" className="flex items-center gap-2 shrink-0 group">
-            <div className="bg-white p-2 rounded-xl inline-block transition-transform duration-300 group-hover:scale-105">
-              <img
-                src="/sarvpratham-logo-full.jpg"
-                alt="Sarvpratham Analytics"
-                className="h-12 w-auto object-contain rounded"
-              />
-            </div>
+            <img
+              src="/sarvpratham-logo-transparent.png"
+              alt="Sarvpratham Analytics"
+              className="h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
           </Link>
           
           <p className="mt-4 text-sm text-white/70 leading-relaxed">

@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AdviserModalProvider } from "@/components/site/AdviserModal";
+import { PurchasePopup } from "@/components/site/PurchasePopup";
 
 function NotFoundComponent() {
   return (
@@ -139,7 +140,8 @@ function RootComponent() {
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <Toaster position="top-center" />
-        
+        <PurchasePopup />
+
         {/* Floating WhatsApp Community badge */}
         <a
           href="https://chat.whatsapp.com/FvWRczrBEarKdAKFt1kvM3"

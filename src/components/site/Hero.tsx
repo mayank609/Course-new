@@ -19,6 +19,7 @@ const companies = [
 
 export function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [liveCount, setLiveCount] = useState(42);
 
   const slides = [
     {
@@ -62,6 +63,16 @@ export function Hero() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveCount((prev) => {
+        const delta = Math.floor(Math.random() * 7) - 3;
+        return Math.min(89, Math.max(28, prev + delta));
+      });
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section className="px-4 pt-6">
       <div className="mx-auto max-w-7xl rounded-3xl bg-[image:var(--gradient-hero)] px-6 sm:px-10 py-10 lg:py-16 relative overflow-hidden">
@@ -82,11 +93,20 @@ export function Hero() {
               >
                 {/* Left Side: Content */}
                 <div className="space-y-5 min-w-0">
-                  <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary/95 bg-primary/5 border border-primary/10 px-3.5 py-1 rounded-full uppercase tracking-wider">
-                    <Sparkles className="h-4 w-4 text-[color:var(--brand-gold-foreground)]" />
-                    {slide.badge}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary/95 bg-primary/5 border border-primary/10 px-3.5 py-1 rounded-full uppercase tracking-wider">
+                      <Sparkles className="h-4 w-4 text-[color:var(--brand-gold-foreground)]" />
+                      {slide.badge}
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-3 py-1 rounded-full uppercase tracking-wider">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" />
+                      </span>
+                      Live · {liveCount} students online
+                    </div>
                   </div>
-                  
+
                   <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.15] text-[color:var(--brand-dark)]">
                     {slide.title}
                   </h1>
