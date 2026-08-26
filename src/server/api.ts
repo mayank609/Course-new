@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { connectDB } from "./db";
 import { Course } from "./models/Course";
 import { Category } from "./models/Category";
@@ -7,6 +8,7 @@ import { Lead, LEAD_SOURCE_VALUES } from "./models/Lead";
 import { Student } from "./models/Student";
 import { Purchase } from "./models/Purchase";
 import { Testimonial } from "./models/Testimonial";
+import { sendPasswordResetEmail } from "./mail";
 import {
   adminCookieHeader,
   clearAdminCookieHeader,
@@ -17,6 +19,8 @@ import {
   studentCookieHeader,
   clearStudentCookieHeader,
 } from "./auth";
+
+const PASSWORD_RESET_PURPOSE = "password_reset";
 
 function json(data: unknown, init: ResponseInit = {}): Response {
   const headers = new Headers(init.headers);
@@ -67,7 +71,10 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
   if (method === "GET" && courseMatch) {
     const course = await Course.findOne({ slug: courseMatch[1], published: true });
     if (!course) return json({ error: "Course not found" }, { status: 404 });
-    return json(course);
+    const bundledCourseDetails = course.bundledCourses?.length
+      ? await Course.find({ slug: { $in: course.bundledCourses }, published: true })
+      : [];
+    return json({ ...course.toObject(), bundledCourseDetails });
   }
 
   if (method === "GET" && path === "/testimonials") {
@@ -131,6 +138,64 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     return jsonWithCookie({ ok: true }, clearStudentCookieHeader());
   }
 
+  if (method === "POST" && path === "/student/forgot-password") {
+    const body = await readJson(request);
+    const { email } = body as { email?: string };
+    if (!email) return json({ error: "Email is required" }, { status: 400 });
+
+    const genericResponse = json({
+      message: "If an account exists with that email, a password reset link has been sent.",
+    });
+
+    const student = await Student.findOne({ email: email.toLowerCase() });
+    if (!student) return genericResponse;
+
+    const token = jwt.sign(
+      { id: String(student._id), purpose: PASSWORD_RESET_PURPOSE, pwv: student.passwordHash.slice(0, 12) },
+      process.env.JWT_SECRET!,
+      { expiresIn: "30m" }
+    );
+    const resetUrl = `${url.origin}/reset-password?token=${encodeURIComponent(token)}`;
+
+    if (!process.env.BREVO_API_KEY) {
+      console.log(`[forgot-password] BREVO_API_KEY not set — reset link for ${student.email}: ${resetUrl}`);
+    }
+    try {
+      await sendPasswordResetEmail(student.email, student.name, resetUrl);
+    } catch (err) {
+      console.error("[forgot-password] failed to send reset email:", err);
+    }
+
+    return genericResponse;
+  }
+
+  if (method === "POST" && path === "/student/reset-password") {
+    const body = await readJson(request);
+    const { token, password } = body as { token?: string; password?: string };
+    if (!token || !password) return json({ error: "Token and new password are required" }, { status: 400 });
+    if (password.length < 6) return json({ error: "Password must be at least 6 characters" }, { status: 400 });
+
+    let payload: { id: string; purpose: string; pwv: string };
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!) as typeof payload;
+    } catch {
+      return json({ error: "This reset link is invalid or has expired. Please request a new one." }, { status: 400 });
+    }
+    if (payload.purpose !== PASSWORD_RESET_PURPOSE) {
+      return json({ error: "Invalid reset token" }, { status: 400 });
+    }
+
+    const student = await Student.findById(payload.id);
+    if (!student || student.passwordHash.slice(0, 12) !== payload.pwv) {
+      return json({ error: "This reset link has already been used. Please request a new one." }, { status: 400 });
+    }
+
+    student.passwordHash = await bcrypt.hash(password, 10);
+    await student.save();
+
+    return json({ message: "Password reset successful. You can now log in." });
+  }
+
   if (method === "GET" && path === "/categories") {
     const categories = await Category.find().sort({ name: 1 });
     return json(categories);
@@ -185,13 +250,42 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     });
 
     student.purchasedCourses.push(course.slug);
-    await student.save();
 
     // Increment enrolled count
     course.enrolledCount = (course.enrolledCount || 0) + 1;
     await course.save();
 
-    return json({ purchase, ok: true }, { status: 201 });
+    // Grant any bundled courses attached to this course for free
+    const bundledPurchases = [];
+    if (course.bundledCourses?.length) {
+      const bundledCourses = await Course.find({
+        slug: { $in: course.bundledCourses },
+        published: true,
+      });
+      for (const bundled of bundledCourses) {
+        if (student.purchasedCourses.includes(bundled.slug)) continue;
+        student.purchasedCourses.push(bundled.slug);
+        bundledPurchases.push(
+          await Purchase.create({
+            studentId: student._id,
+            studentName: student.name,
+            studentEmail: student.email,
+            courseSlug: bundled.slug,
+            courseTitle: bundled.title,
+            amount: 0,
+            currency: bundled.currency,
+            status: "completed",
+            paymentId: `bundle_${mockPaymentId}`,
+          })
+        );
+        bundled.enrolledCount = (bundled.enrolledCount || 0) + 1;
+        await bundled.save();
+      }
+    }
+
+    await student.save();
+
+    return json({ purchase, bundledPurchases, ok: true }, { status: 201 });
   }
 
   return json({ error: "Not found" }, { status: 404 });

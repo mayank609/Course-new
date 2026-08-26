@@ -154,6 +154,38 @@ function CheckoutPage() {
                   </div>
                 </div>
 
+                {/* Bundled courses included free */}
+                {course.bundledCourseDetails && course.bundledCourseDetails.length > 0 && (
+                  <div className="space-y-3 border-b border-border pb-6">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      This Bundle Also Includes
+                    </h3>
+                    <div className="space-y-2">
+                      {course.bundledCourseDetails.map((bundled) => (
+                        <div
+                          key={bundled.slug}
+                          className="flex items-center gap-3 p-2.5 bg-emerald-500/5 border border-emerald-500/10 rounded-xl"
+                        >
+                          <div className="w-14 aspect-video rounded-md overflow-hidden shrink-0">
+                            <img
+                              src={getCourseImage(bundled.category, bundled.imageUrl)}
+                              alt={bundled.title}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold truncate">{bundled.title}</p>
+                            <p className="text-xs text-muted-foreground">{bundled.durationHours} hrs content</p>
+                          </div>
+                          <span className="shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded-full uppercase">
+                            Free
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Account Details summary */}
                 {student && (
                   <div className="space-y-3 pt-2">
