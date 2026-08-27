@@ -4,6 +4,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { BookOpen, User, Phone, Mail, Award, ArrowRight, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
@@ -118,48 +119,58 @@ function DashboardPage() {
                       Welcome back, <span className="font-semibold text-foreground">{student.name}</span>!
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => logoutMutation.mutate()}
-                    className="rounded-full border-destructive/20 text-destructive hover:bg-destructive/5"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" /> Log out
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <HoverCard openDelay={100} closeDelay={100}>
+                      <HoverCardTrigger asChild>
+                        <button
+                          className="h-10 w-10 grid place-items-center rounded-full border border-border bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+                          aria-label="View profile details"
+                        >
+                          <User className="h-5 w-5" />
+                        </button>
+                      </HoverCardTrigger>
+                      <HoverCardContent align="end" className="w-72 rounded-2xl">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <h2 className="font-serif text-base font-bold truncate">{student.name}</h2>
+                            <p className="text-xs text-muted-foreground">Your account details</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 text-sm mt-4">
+                          <div className="flex items-center gap-2.5 text-muted-foreground">
+                            <Mail className="h-4 w-4 shrink-0" />
+                            <span className="truncate text-foreground">{student.email}</span>
+                          </div>
+                          {student.phone && (
+                            <div className="flex items-center gap-2.5 text-muted-foreground">
+                              <Phone className="h-4 w-4 shrink-0" />
+                              <span className="text-foreground">{student.phone}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2.5 text-muted-foreground border-t border-border pt-3">
+                            <BookOpen className="h-4 w-4 shrink-0" />
+                            <span className="text-foreground font-semibold">
+                              {student.purchasedCourses.length} Courses Purchased
+                            </span>
+                          </div>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                    <Button
+                      variant="outline"
+                      onClick={() => logoutMutation.mutate()}
+                      className="rounded-full border-destructive/20 text-destructive hover:bg-destructive/5"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" /> Log out
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="grid md:grid-cols-[1fr_2.5fr] gap-8 items-start">
-                  {/* Student Profile Info Card */}
-                  <div className="bg-card border border-border rounded-3xl p-6 shadow-[var(--shadow-card)] space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h2 className="font-serif text-lg font-bold">Profile Info</h2>
-                        <p className="text-xs text-muted-foreground">Your account details</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 text-sm">
-                      <div className="flex items-center gap-2.5 text-muted-foreground">
-                        <Mail className="h-4 w-4 shrink-0" />
-                        <span className="truncate text-foreground">{student.email}</span>
-                      </div>
-                      {student.phone && (
-                        <div className="flex items-center gap-2.5 text-muted-foreground">
-                          <Phone className="h-4 w-4 shrink-0" />
-                          <span className="text-foreground">{student.phone}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2.5 text-muted-foreground border-t border-border pt-4">
-                        <BookOpen className="h-4 w-4 shrink-0" />
-                        <span className="text-foreground font-semibold">
-                          {student.purchasedCourses.length} Courses Purchased
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
+                <div className="max-w-3xl">
                   {/* My Courses Section */}
                   <div className="space-y-6">
                     <h2 className="font-serif text-2xl font-bold">My Purchased Courses</h2>
