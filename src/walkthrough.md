@@ -1,6 +1,6 @@
 # Cashfree Payment Gateway Integration Walkthrough
 
-We have successfully integrated the Cashfree Payment Gateway for live production course checkouts, replacing the mock simulation flow, enforced minimum display limits on student enrollment counts, configured WhatsApp CTA redirects, corrected header logo rendering, updated the design color system with dynamic accents, made the course cards fully clickable, implemented direct platform playback for course YouTube lessons, consolidated the active Meta Pixels, added billing detail fields to checkout and purchases tracking, implemented student active/inactive filtering, added date range filtering for dashboard stats, integrated a secure custom video player to prevent sharing, created a dedicated classroom route, replaced the second slide graphics with a custom upskilling caricature, updated the hero section to span full-width, and integrated Meta Pixel tracking events.
+We have successfully integrated the Cashfree Payment Gateway for live production course checkouts, replacing the mock simulation flow, enforced minimum display limits on student enrollment counts, configured WhatsApp CTA redirects, corrected header logo rendering, updated the design color system with dynamic accents, made the course cards fully clickable, implemented direct platform playback for course YouTube lessons, consolidated the active Meta Pixels, added billing detail fields to checkout and purchases tracking, implemented student active/inactive filtering, added date range filtering for dashboard stats, integrated a secure custom video player to prevent sharing, created a dedicated classroom route, replaced the second slide graphics with a custom upskilling caricature, updated the hero section to span full-width, integrated Meta Pixel tracking events, captured/displayed student checkout city info, and redesigned the admin courses list into visual block cards with Direct Test Checkout actions.
 
 ## Changes Made
 
@@ -13,14 +13,14 @@ We have successfully integrated the Cashfree Payment Gateway for live production
   - Added `POST /api/payment/create-order` to validate user sessions, sum total costs of courses/addons, invoke the Cashfree Orders API, create pending `Purchase` documents in the database, and return the session token to the frontend.
   - Added `GET /api/payment/verify` to request status from Cashfree and, upon `"PAID"` confirmation, atomically update DB purchase items to `"completed"` and enroll the student.
   - Modified course lists, course detail endpoints, and student courses endpoints to automatically enforce that returned `enrolledCount` values are capped to a minimum of 50.
-  - Updated the order creation endpoint to parse and validate `phone`, `state`, and `pincode` request parameters, persist them in both the student profile and the Mongoose `Purchase` model, and pass the phone number to the Cashfree order configuration payload.
+  - Updated the order creation endpoint to parse and validate `phone`, `state`, `city`, and `pincode` request parameters, persist them in the Mongoose `Purchase` model, and update student profiles.
   - Updated the statistics endpoint (`GET /api/admin/stats`) to parse optional `startDate` and `endDate` query parameters and filter transaction counts, revenue totals, monthly charts, and lead registrations accordingly.
 
 ### 3. Frontend Checkout and Verification Routing
 - **[checkout.$slug.tsx](file:///Applications/skillup-hub-main/src/routes/checkout.$slug.tsx)**:
   - Implemented dynamic loading of Cashfree SDK script from their CDN to avoid SSR bundling issues.
   - Hooked the checkout button to the backend order endpoint and triggered `cashfree.checkout(...)` on `_self`.
-  - Added form input states and fields under "Billing Details" for Phone Number, State, and Pincode, pre-populating the mobile number if already configured in the user profile. Added client-side form validations.
+  - Added form input states and fields under "Billing Details" for Phone Number, State, City, and Pincode, pre-populating the mobile number if already configured in the user profile. Added client-side form validations.
 - **[checkout-callback.tsx](file:///Applications/skillup-hub-main/src/routes/checkout-callback.tsx)**:
   - Created a new frontend callback route.
   - Displays a clean, elegant progress loader verifying details, retries up to 3 times with exponential backoff on active state propagation delays, and navigates back to receipt confirmation.
@@ -55,8 +55,8 @@ We added double-layered validation so that the student enrollment/purchase count
 - **[MetaPixel.tsx](file:///Applications/skillup-hub-main/src/components/site/MetaPixel.tsx)**: Removed the duplicate Meta Pixel ID (`1053403490723972`), leaving only the single specified Meta Pixel ID (`947778844694322`) ending in `22` active.
 
 ### 11. Student Billing Details & Admin Purchases View
-- **Mongoose Purchase Model Schema**: Added the `studentPhone`, `studentState`, and `studentPincode` fields in [`Purchase.ts`](file:///Applications/skillup-hub-main/src/server/models/Purchase.ts).
-- **Admin Purchases Console**: Updated [`purchases.html`](file:///Applications/skillup-hub-main/public/admin/purchases.html) to display phone number (under Email/Phone) and the billing details (State and Pincode) for each purchase in the main transactions table.
+- **Mongoose Purchase Model Schema**: Added the `studentPhone`, `studentState`, `studentCity`, and `studentPincode` fields in [`Purchase.ts`](file:///Applications/skillup-hub-main/src/server/models/Purchase.ts).
+- **Admin Purchases Console**: Updated [`purchases.html`](file:///Applications/skillup-hub-main/public/admin/purchases.html) to display phone number (under Email/Phone) and the billing details (City, State and Pincode) for each purchase in the main transactions table.
 
 ### 12. Student Active/Inactive Filtering
 - **[students.html](file:///Applications/skillup-hub-main/public/admin/students.html)**: Added a dropdown select toolbar filter ("All Students", "Active (Purchased)", "Inactive (No Purchase)"). Active students are filtered based on having purchased at least one course (`purchasedCourses.length > 0`), and inactive ones are those with no purchases.
@@ -85,16 +85,5 @@ We added double-layered validation so that the student enrollment/purchase count
 - **[register.tsx](file:///Applications/skillup-hub-main/src/routes/register.tsx)**: Triggered standard `CompleteRegistration` events when student signup finishes.
 - **[thank-you.tsx](file:///Applications/skillup-hub-main/src/routes/thank-you.tsx)**: Triggered standard `Purchase` (with course values) and `CompleteRegistration` events when the final checkout callback routes students to receipt confirmation.
 
----
-
-## Verification & Testing
-
-### 1. Credentials Validation
-We sent a test transaction request to Cashfree's production servers using the provided credentials:
-- **Command**: `curl --request POST --url https://api.cashfree.com/pg/orders ...`
-- **Result**: Successfully created a live `order` entity and returned active `payment_session_id`.
-
-### 2. Compilation and Routing Build Checks
-We ran the project bundle builder locally:
-- **Command**: `bun run build`
-- **Result**: Complete compilation success (`Exit code: 0`). All pages compile correctly and type checks passed without issues.
+### 19. Admin Courses card blocks layout
+- **[courses.html](file:///Applications/skillup-hub-main/public/admin/courses.html)**: Redesigned the table layout in the admin console into a premium responsive CSS grid of course card blocks. Each block renders its course thumbnail photo, category, title, slug, price, enrollment count, status, edit/delete actions, and a gold-colored "Add to Cart" button linking straight to the checkout page for easy client testing.

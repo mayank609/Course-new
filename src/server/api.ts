@@ -309,16 +309,17 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const session = getStudentSession(request);
     if (!session) return json({ error: "Not authenticated" }, { status: 401 });
 const body = await readJson(request);
-    const { courseSlug, addonSlugs, phone, state, pincode } = body as {
+    const { courseSlug, addonSlugs, phone, state, city, pincode } = body as {
       courseSlug?: string;
       addonSlugs?: string[];
       phone?: string;
       state?: string;
+      city?: string;
       pincode?: string;
     };
     if (!courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
-    if (!phone || !phone.trim() || !state || !state.trim() || !pincode || !pincode.trim()) {
-      return json({ error: "Phone, state, and pincode are required" }, { status: 400 });
+    if (!phone || !phone.trim() || !state || !state.trim() || !city || !city.trim() || !pincode || !pincode.trim()) {
+      return json({ error: "Phone, state, city, and pincode are required" }, { status: 400 });
     }
 
     const course = await Course.findOne({ slug: courseSlug });
@@ -404,6 +405,7 @@ const body = await readJson(request);
       studentEmail: student.email,
       studentPhone: phone || student.phone || "",
       studentState: state || "",
+      studentCity: city || "",
       studentPincode: pincode || "",
       courseSlug: course.slug,
       courseTitle: course.title,
@@ -420,6 +422,7 @@ const body = await readJson(request);
         studentEmail: student.email,
         studentPhone: phone || student.phone || "",
         studentState: state || "",
+        studentCity: city || "",
         studentPincode: pincode || "",
         courseSlug: addon.slug,
         courseTitle: addon.title,

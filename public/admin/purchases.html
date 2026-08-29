@@ -64,8 +64,10 @@
                 ${p.studentPhone ? `<div class="muted" style="font-size:0.78rem;margin-top:2px">📞 ${escapeHtml(p.studentPhone)}</div>` : ""}
               </td>
               <td>
-                ${p.studentState || p.studentPincode ? `
-                  <div style="font-weight:500">${escapeHtml(p.studentState || "")}</div>
+                ${p.studentState || p.studentCity || p.studentPincode ? `
+                  <div style="font-weight:500">
+                    ${escapeHtml(p.studentCity || "")}${p.studentCity && p.studentState ? ", " : ""}${escapeHtml(p.studentState || "")}
+                  </div>
                   ${p.studentPincode ? `<div class="muted" style="font-size:0.78rem;margin-top:2px">PIN: ${escapeHtml(p.studentPincode)}</div>` : ""}
                 ` : `<span class="muted italic">&mdash;</span>`}
               </td>

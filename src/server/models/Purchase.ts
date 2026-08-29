@@ -9,6 +9,7 @@ const purchaseSchema = new mongoose.Schema(
     courseTitle: { type: String, required: true },
     studentPhone: { type: String, default: "" },
     studentState: { type: String, default: "" },
+    studentCity: { type: String, default: "" },
     studentPincode: { type: String, default: "" },
     amount: { type: Number, required: true },
     currency: { type: String, default: "INR" },

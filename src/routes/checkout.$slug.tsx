@@ -41,6 +41,7 @@ function CheckoutPage() {
   // Billing details
   const [phone, setPhone] = useState("");
   const [state, setState] = useState("");
+  const [city, setCity] = useState("");
   const [pincode, setPincode] = useState("");
 
   // Cashfree payment processing steps
@@ -125,6 +126,7 @@ function CheckoutPage() {
           addonSlugs: Array.from(selectedAddons),
           phone: phone.trim(),
           state: state.trim(),
+          city: city.trim(),
           pincode: pincode.trim(),
         }),
       });
@@ -168,6 +170,10 @@ function CheckoutPage() {
     }
     if (!state.trim()) {
       toast.error("Please enter your state");
+      return;
+    }
+    if (!city.trim()) {
+      toast.error("Please enter your city");
       return;
     }
     if (!pincode.trim()) {
@@ -308,7 +314,7 @@ function CheckoutPage() {
                             required
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-3">
                           <div>
                             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">State *</label>
                             <input
@@ -316,7 +322,18 @@ function CheckoutPage() {
                               value={state}
                               onChange={(e) => setState(e.target.value)}
                               placeholder="e.g. Delhi"
-                              className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                              className="w-full bg-white border border-border rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">City *</label>
+                            <input
+                              type="text"
+                              value={city}
+                              onChange={(e) => setCity(e.target.value)}
+                              placeholder="e.g. New Delhi"
+                              className="w-full bg-white border border-border rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
                               required
                             />
                           </div>
@@ -326,8 +343,8 @@ function CheckoutPage() {
                               type="text"
                               value={pincode}
                               onChange={(e) => setPincode(e.target.value)}
-                              placeholder="6-digit PIN code"
-                              className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                              placeholder="6-digit PIN"
+                              className="w-full bg-white border border-border rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
                               required
                             />
                           </div>
