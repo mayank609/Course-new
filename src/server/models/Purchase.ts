@@ -7,6 +7,9 @@ const purchaseSchema = new mongoose.Schema(
     studentEmail: { type: String, required: true },
     courseSlug: { type: String, required: true, lowercase: true, trim: true },
     courseTitle: { type: String, required: true },
+    studentPhone: { type: String, default: "" },
+    studentState: { type: String, default: "" },
+    studentPincode: { type: String, default: "" },
     amount: { type: Number, required: true },
     currency: { type: String, default: "INR" },
     status: { type: String, default: "completed" }, // "completed", "pending", "failed"

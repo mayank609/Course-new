@@ -25,6 +25,13 @@
   <main class="main">
     <h1>Students Directory</h1>
     <p class="subtitle">Complete directory of students registered on the platform</p>
+    <div class="toolbar" style="margin-bottom: 20px;">
+      <select id="filter-purchase" style="padding: 8px 12px; border: 1px border; border-radius: 6px; font-weight: 500;">
+        <option value="all">All Students</option>
+        <option value="active">Active (Purchased)</option>
+        <option value="inactive">Inactive (No Purchase)</option>
+      </select>
+    </div>
     <div id="table-wrap"></div>
   </main>
 </div>
@@ -39,13 +46,27 @@
       wrap.innerHTML = `<div class="empty">No registered students yet.</div>`;
       return;
     }
+
+    const filter = document.getElementById("filter-purchase").value;
+    const filtered = students.filter((s) => {
+      const hasPurchased = (s.purchasedCourses || []).length > 0;
+      if (filter === "active") return hasPurchased;
+      if (filter === "inactive") return !hasPurchased;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      wrap.innerHTML = `<div class="empty">No students match this filter.</div>`;
+      return;
+    }
+
     wrap.innerHTML = `
       <table>
         <thead><tr>
           <th>Name</th><th>Email</th><th>Phone</th><th>Purchased Courses</th><th>Registered</th><th></th>
         </tr></thead>
         <tbody>
-          ${students.map((s) => `
+          ${filtered.map((s) => `
             <tr data-id="${s._id}">
               <td style="font-weight:600">${escapeHtml(s.name)}</td>
               <td>${escapeHtml(s.email)}</td>
@@ -81,6 +102,7 @@
   (async () => {
     await requireAuth();
     wireLogout();
+    document.getElementById("filter-purchase").addEventListener("change", render);
     await load();
   })();
 </script>

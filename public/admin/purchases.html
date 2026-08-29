@@ -52,14 +52,23 @@
     wrap.innerHTML = `
       <table>
         <thead><tr>
-          <th>Transaction ID</th><th>Student Name</th><th>Student Email</th><th>Course</th><th>Amount</th><th>Date</th><th></th>
+          <th>Transaction ID</th><th>Student Name</th><th>Student Email / Phone</th><th>Billing Location</th><th>Course</th><th>Amount</th><th>Date</th><th></th>
         </tr></thead>
         <tbody>
           ${purchases.map((p) => `
             <tr data-id="${p._id}">
               <td><code style="background:#eee;padding:2px 6px;border-radius:4px">${escapeHtml(p.paymentId)}</code></td>
               <td>${escapeHtml(p.studentName)}</td>
-              <td>${escapeHtml(p.studentEmail)}</td>
+              <td>
+                ${escapeHtml(p.studentEmail)}
+                ${p.studentPhone ? `<div class="muted" style="font-size:0.78rem;margin-top:2px">📞 ${escapeHtml(p.studentPhone)}</div>` : ""}
+              </td>
+              <td>
+                ${p.studentState || p.studentPincode ? `
+                  <div style="font-weight:500">${escapeHtml(p.studentState || "")}</div>
+                  ${p.studentPincode ? `<div class="muted" style="font-size:0.78rem;margin-top:2px">PIN: ${escapeHtml(p.studentPincode)}</div>` : ""}
+                ` : `<span class="muted italic">&mdash;</span>`}
+              </td>
               <td class="muted">${escapeHtml(p.courseTitle)}</td>
               <td style="font-weight:600">₹${p.amount}</td>
               <td class="muted">${new Date(p.createdAt).toLocaleString()}</td>

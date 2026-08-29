@@ -308,15 +308,30 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
   if (method === "POST" && path === "/payment/create-order") {
     const session = getStudentSession(request);
     if (!session) return json({ error: "Not authenticated" }, { status: 401 });
-    const body = await readJson(request);
-    const { courseSlug, addonSlugs } = body as { courseSlug?: string; addonSlugs?: string[] };
+const body = await readJson(request);
+    const { courseSlug, addonSlugs, phone, state, pincode } = body as {
+      courseSlug?: string;
+      addonSlugs?: string[];
+      phone?: string;
+      state?: string;
+      pincode?: string;
+    };
     if (!courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
+    if (!phone || !phone.trim() || !state || !state.trim() || !pincode || !pincode.trim()) {
+      return json({ error: "Phone, state, and pincode are required" }, { status: 400 });
+    }
 
     const course = await Course.findOne({ slug: courseSlug });
     if (!course) return json({ error: "Course not found" }, { status: 404 });
 
     const student = await Student.findById(session.id);
     if (!student) return json({ error: "Student not found" }, { status: 404 });
+
+    // Update phone in student profile if different
+    if (phone && phone.trim() && student.phone !== phone.trim()) {
+      student.phone = phone.trim();
+      await student.save();
+    }
 
     // Check if already purchased
     if (student.purchasedCourses.includes(courseSlug)) {
@@ -365,7 +380,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
         customer_details: {
           customer_id: student._id.toString(),
           customer_email: student.email,
-          customer_phone: student.phone || "9999999999",
+          customer_phone: phone || student.phone || "9999999999",
           customer_name: student.name,
         },
         order_meta: {
@@ -387,6 +402,9 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       studentId: student._id,
       studentName: student.name,
       studentEmail: student.email,
+      studentPhone: phone || student.phone || "",
+      studentState: state || "",
+      studentPincode: pincode || "",
       courseSlug: course.slug,
       courseTitle: course.title,
       amount: course.price,
@@ -400,6 +418,9 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
         studentId: student._id,
         studentName: student.name,
         studentEmail: student.email,
+        studentPhone: phone || student.phone || "",
+        studentState: state || "",
+        studentPincode: pincode || "",
         courseSlug: addon.slug,
         courseTitle: addon.title,
         amount: addon.price,
@@ -517,19 +538,45 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   }
 
   if (method === "GET" && path === "/stats") {
+    const startDateStr = url.searchParams.get("startDate");
+    const endDateStr = url.searchParams.get("endDate");
+
+    const matchQuery: Record<string, any> = { status: "completed" };
+    const leadMatchQuery: Record<string, any> = {};
+    const newLeadMatchQuery: Record<string, any> = { status: "new" };
+
+    if (startDateStr || endDateStr) {
+      matchQuery.createdAt = {};
+      leadMatchQuery.createdAt = {};
+      newLeadMatchQuery.createdAt = {};
+
+      if (startDateStr) {
+        matchQuery.createdAt.$gte = new Date(startDateStr);
+        leadMatchQuery.createdAt.$gte = new Date(startDateStr);
+        newLeadMatchQuery.createdAt.$gte = new Date(startDateStr);
+      }
+      if (endDateStr) {
+        const endDate = new Date(endDateStr);
+        endDate.setHours(23, 59, 59, 999);
+        matchQuery.createdAt.$lte = endDate;
+        leadMatchQuery.createdAt.$lte = endDate;
+        newLeadMatchQuery.createdAt.$lte = endDate;
+      }
+    }
+
     const [courseCount, leadCount, newLeadCount, categoryCount, purchaseCount, studentCount, revenueResult, monthlyRevenue] = await Promise.all([
       Course.countDocuments(),
-      Lead.countDocuments(),
-      Lead.countDocuments({ status: "new" }),
+      Lead.countDocuments(leadMatchQuery),
+      Lead.countDocuments(newLeadMatchQuery),
       Category.countDocuments(),
-      Purchase.countDocuments({ status: "completed" }),
+      Purchase.countDocuments(matchQuery),
       Student.countDocuments(),
       Purchase.aggregate([
-        { $match: { status: "completed" } },
+        { $match: matchQuery },
         { $group: { _id: null, total: { $sum: "$amount" } } }
       ]),
       Purchase.aggregate([
-        { $match: { status: "completed" } },
+        { $match: matchQuery },
         {
           $group: {
             _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },

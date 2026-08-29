@@ -37,6 +37,11 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { slug } = Route.useParams();
   
+  // Billing details
+  const [phone, setPhone] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
+
   // Cashfree payment processing steps
   const [paymentStep, setPaymentStep] = useState<number>(-1);
   const [paymentStepsTexts] = useState<string[]>([
@@ -53,10 +58,16 @@ function CheckoutPage() {
       if (!res.ok) {
         throw new Error("Unauthorized");
       }
-      return res.json() as Promise<{ id: string; name: string; email: string; purchasedCourses: string[] }>;
+      return res.json() as Promise<{ id: string; name: string; email: string; phone?: string; purchasedCourses: string[] }>;
     },
     retry: false,
   });
+
+  useEffect(() => {
+    if (student?.phone) {
+      setPhone(student.phone);
+    }
+  }, [student]);
 
   // Fetch Course details
   const { data: course, isLoading: isCourseLoading, isError: isCourseError } = useQuery({
@@ -95,7 +106,13 @@ function CheckoutPage() {
       const res = await fetch("/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseSlug: slug, addonSlugs: Array.from(selectedAddons) }),
+        body: JSON.stringify({
+          courseSlug: slug,
+          addonSlugs: Array.from(selectedAddons),
+          phone: phone.trim(),
+          state: state.trim(),
+          pincode: pincode.trim(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -127,6 +144,22 @@ function CheckoutPage() {
   });
 
   const handlePayment = () => {
+    if (!phone.trim()) {
+      toast.error("Please enter a valid phone number");
+      return;
+    }
+    if (phone.trim().length < 10) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+    if (!state.trim()) {
+      toast.error("Please enter your state");
+      return;
+    }
+    if (!pincode.trim()) {
+      toast.error("Please enter your pincode");
+      return;
+    }
     setPaymentStep(0); // Connecting to gateway
     checkoutMutation.mutate();
   };
@@ -229,15 +262,63 @@ function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Account Details summary */}
+                {/* Billing Details */}
                 {student && (
                   <div className="space-y-3 pt-2">
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Billing Account
+                      Billing Details
                     </h3>
-                    <div className="text-sm p-4 bg-muted/30 rounded-2xl space-y-1 border border-border">
-                      <p className="font-semibold">{student.name}</p>
-                      <p className="text-muted-foreground text-xs">{student.email}</p>
+                    <div className="space-y-4 p-5 bg-muted/20 rounded-3xl border border-border">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Student Name</label>
+                          <p className="text-sm font-semibold text-foreground">{student.name}</p>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Student Email</label>
+                          <p className="text-sm font-semibold text-foreground truncate">{student.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-border/60 my-2" />
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Phone Number *</label>
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="10-digit mobile number"
+                            className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">State *</label>
+                            <input
+                              type="text"
+                              value={state}
+                              onChange={(e) => setState(e.target.value)}
+                              placeholder="e.g. Delhi"
+                              className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Pincode *</label>
+                            <input
+                              type="text"
+                              value={pincode}
+                              onChange={(e) => setPincode(e.target.value)}
+                              placeholder="6-digit PIN code"
+                              className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
