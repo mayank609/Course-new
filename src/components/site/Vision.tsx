@@ -1,109 +1,73 @@
-import { ShieldCheck, HelpCircle, CheckCircle2, BadgePercent } from "lucide-react";
+import { Award, Sparkles, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 
 export function Vision() {
   return (
-    <section id="how-it-works" className="px-4 py-16 sm:py-20 bg-[#2e1065] text-white">
+    <section className="px-4 py-16 sm:py-20 bg-slate-50 border-t border-slate-100/60 overflow-hidden">
       <div className="mx-auto max-w-7xl">
-        {/* Title Header */}
-        <Reveal className="text-center">
-          <h2 className="font-sans text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Here's how you will learn <span className="text-[#a78bfa] underline decoration-yellow-400 decoration-3 underline-offset-4">for Free</span>
-          </h2>
-          <p className="mt-3 text-purple-200 font-medium text-sm sm:text-base max-w-2xl mx-auto">
-            Our unique 100% refund guarantee keeps you motivated to finish what you start and build job-ready skills.
-          </p>
-        </Reveal>
-
-        {/* Layout Grid */}
-        <div className="mt-12 grid lg:grid-cols-[1.3fr_1fr] gap-10 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
-          {/* Left Column: Vertically stacked step cards */}
-          <div className="space-y-6">
+          {/* Left Column: Instructor details */}
+          <Reveal className="space-y-6">
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200/50 px-3 py-1 rounded-full uppercase tracking-wider">
+                <Award className="h-3.5 w-3.5" />
+                Meet Your Instructor
+              </span>
+              <h2 className="mt-3 font-sans text-3xl sm:text-4xl font-extrabold tracking-tight text-[#1e1b4b]">
+                Shubham Verma
+                <span className="text-purple-600 block text-lg font-bold mt-1">Microsoft Certified Trainer</span>
+              </h2>
+            </div>
             
-            {/* Step 1 */}
-            <Reveal delay={100} className="flex gap-6 p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group hover:bg-white/10 transition-colors">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#7c3aed] text-white shadow-md">
-                <BadgePercent className="h-6 w-6" />
+            <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed">
+              Shubham brings over a decade of real-world corporate experience, helping professionals master Microsoft Office tools integrated with advanced AI features. His practical, case-study-driven pedagogy simplifies complex automation workflows, ensuring you build skills that translate directly to workplace efficiency.
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+              <div className="group rounded-2xl bg-white p-5 border border-slate-100 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-purple-200/50">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 group-hover:scale-105 transition-transform">
+                  <Award className="h-5 w-5" />
+                </div>
+                <h4 className="mt-3 font-sans font-bold text-slate-800 text-sm sm:text-base">Microsoft Certified</h4>
+                <p className="text-xs text-slate-400 font-semibold mt-1">Expert-led authorized curriculum</p>
               </div>
-              <div className="space-y-1">
-                <h3 className="font-sans font-bold text-lg sm:text-xl text-white">1. Enroll</h3>
-                <p className="text-sm text-purple-200">
-                  Enroll into your preferred courses (Excel, PowerPoint, Word, or AI) by paying a nominal one-time registration fee.
+
+              <div className="group rounded-2xl bg-white p-5 border border-slate-100 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-purple-200/50">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 group-hover:scale-105 transition-transform">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <h4 className="mt-3 font-sans font-bold text-slate-800 text-sm sm:text-base">AI Integration</h4>
+                <p className="text-xs text-slate-400 font-semibold mt-1">Learn ChatGPT & Copilot workflows</p>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Right Column: Premium Certificate Mockup */}
+          <Reveal delay={120} className="relative flex justify-center">
+            <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/10 to-indigo-600/5 rounded-3xl filter blur-3xl -z-10 transform scale-95" />
+            
+            <div className="relative group max-w-lg w-full rounded-[32px] overflow-hidden shadow-xl border border-slate-100 bg-white p-4 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl">
+              <div className="rounded-2xl overflow-hidden border border-slate-100/50">
+                <img
+                  src="/Cert1.webp"
+                  alt="Sarvpratham Analytics Certificate of Completion"
+                  className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.01]"
+                />
+              </div>
+              
+              <div className="mt-4 p-2">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0" />
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Industry Recognized</span>
+                </div>
+                <h3 className="font-sans text-base font-extrabold text-slate-800">
+                  Earn Verified Certification
+                </h3>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
+                  Upon completion, receive a formal digital certificate of achievement verified by Sarvpratham Analytics to highlight on your resume and LinkedIn.
                 </p>
               </div>
-              <span className="absolute right-4 bottom-2 text-7xl font-extrabold text-white/5 select-none pointer-events-none group-hover:text-white/10 transition-colors">1</span>
-            </Reveal>
-
-            {/* Step 2 */}
-            <Reveal delay={150} className="flex gap-6 p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group hover:bg-white/10 transition-colors">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#7c3aed] text-white shadow-md">
-                <CheckCircle2 className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-sans font-bold text-lg sm:text-xl text-white">2. Complete Course</h3>
-                <p className="text-sm text-purple-200">
-                  Watch all modules, complete the hands-on practice assignments, and complete the coursework chapters.
-                </p>
-              </div>
-              <span className="absolute right-4 bottom-2 text-7xl font-extrabold text-white/5 select-none pointer-events-none group-hover:text-white/10 transition-colors">2</span>
-            </Reveal>
-
-            {/* Step 3 */}
-            <Reveal delay={200} className="flex gap-6 p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group hover:bg-white/10 transition-colors">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#7c3aed] text-white shadow-md">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-sans font-bold text-lg sm:text-xl text-white">3. 100% Refund Awarded</h3>
-                <p className="text-sm text-purple-200">
-                  Submit your completion request and receive a 100% refund of your registration fee credited directly back to your bank account!
-                </p>
-              </div>
-              <span className="absolute right-4 bottom-2 text-7xl font-extrabold text-white/5 select-none pointer-events-none group-hover:text-white/10 transition-colors">3</span>
-            </Reveal>
-
-          </div>
-
-          {/* Right Column: Duration and Access Details */}
-          <Reveal delay={180} className="p-8 rounded-[36px] bg-gradient-to-br from-[#4c1d95] to-[#3b0764] border border-purple-500/20 shadow-2xl relative overflow-hidden">
-            <div className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full bg-purple-500/10 blur-xl" />
-            
-            <h3 className="font-sans text-xl sm:text-2xl font-extrabold text-white border-b border-purple-500/20 pb-4 mb-6">
-              Duration of Course
-            </h3>
-            
-            <ul className="space-y-6">
-              <li className="flex gap-4 items-start">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#fef08a] text-black">
-                  <span className="font-extrabold text-xs">✓</span>
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-sans font-bold text-sm sm:text-base text-yellow-300">Lifetime Access</h4>
-                  <p className="text-xs sm:text-sm text-purple-200 leading-relaxed">
-                    Get lifetime access to all learning materials, curriculum resources, and future video updates, even after receiving your 100% refund.
-                  </p>
-                </div>
-              </li>
-
-              <li className="flex gap-4 items-start">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#fef08a] text-black">
-                  <span className="font-extrabold text-xs">✓</span>
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-sans font-bold text-sm sm:text-base text-yellow-300">3 Months Guarantee Window</h4>
-                  <p className="text-xs sm:text-sm text-purple-200 leading-relaxed">
-                    To claim your 100% refund, simply complete the course lessons and submit practice tasks within 3 months of your enrollment.
-                  </p>
-                </div>
-              </li>
-            </ul>
-
-            <div className="mt-8 flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 text-xs text-purple-200">
-              <HelpCircle className="h-5 w-5 shrink-0 text-[#fef08a]" />
-              <p>
-                Over <b className="text-white">92%</b> of active learners claim their refund successfully. Build your skills with zero financial risk.
-              </p>
             </div>
           </Reveal>
 

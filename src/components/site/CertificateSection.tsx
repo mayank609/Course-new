@@ -2,7 +2,7 @@ import { Check, X, ShieldCheck, Award, Flame, Star } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 
 const bulletPoints = [
-  { text: "100% Refund Guarantee" },
+  { text: "1-on-1 Doubt Support" },
   { text: "Personalized Mentorship" },
   { text: "Internship Opportunities" },
   { text: "Premium Quality Courses" },
@@ -34,7 +34,7 @@ const comparisonData = [
     others: true,
   },
   {
-    feature: "100% Money-back Refund",
+    feature: "Corporate Expert Mentorship",
     sarvpratham: true,
     youtube: false,
     others: false,

@@ -3,24 +3,24 @@ import { Reveal } from "@/components/site/Reveal";
 
 const stats = [
   {
-    icon: <BookOpen className="h-6 w-6 text-purple-600 shrink-0" />,
-    value: "50+",
-    label: "Courses",
-  },
-  {
     icon: <GraduationCap className="h-6 w-6 text-purple-600 shrink-0" />,
-    value: "100k+",
-    label: "Learners",
-  },
-  {
-    icon: <MessageSquareCode className="h-6 w-6 text-purple-600 shrink-0" />,
-    value: "100k+",
-    label: "Doubts Solved",
+    value: "4,000+",
+    label: "Students Trained",
   },
   {
     icon: <Award className="h-6 w-6 text-purple-600 shrink-0" />,
-    value: "10k+",
-    label: "Student Projects",
+    value: "12+",
+    label: "Years Experience",
+  },
+  {
+    icon: <BookOpen className="h-6 w-6 text-purple-600 shrink-0" />,
+    value: "140+",
+    label: "Video Lessons",
+  },
+  {
+    icon: <MessageSquareCode className="h-6 w-6 text-purple-600 shrink-0" />,
+    value: "100+",
+    label: "Hours Content",
   },
 ];
 

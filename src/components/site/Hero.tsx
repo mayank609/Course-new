@@ -58,16 +58,17 @@ export function Hero() {
 
             <Reveal delay={0.1}>
               <h1 className="font-sans text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.1] text-slate-900 tracking-tight">
-                Level Up Your Career With Expert Mentorship & Internships For{" "}
+                Master MS Office & AI Skills With{" "}
                 <span className="inline-block bg-[#f3e8ff] text-[#6b21a8] px-4 py-1.5 rounded-3xl font-extrabold shadow-sm border border-purple-200/40 transform hover:scale-102 transition-transform">
-                  FREE
-                </span>
+                  Expert
+                </span>{" "}
+                Mentorship & Internships
               </h1>
             </Reveal>
 
             <Reveal delay={0.2}>
               <p className="text-lg sm:text-xl text-slate-600 font-medium leading-relaxed max-w-xl">
-                With 100% Refund guarantee on course completion. Learn MS Office, Excel, PowerPoint & AI from corporate experts.
+                Advance your career, build real projects, and earn industry-recognized certifications. Learn from corporate experts.
               </p>
             </Reveal>
 
@@ -98,34 +99,25 @@ export function Hero() {
               >
                 <Link to="/courses">Explore Courses</Link>
               </Button>
-              <a
-                href="#how-it-works"
-                className="flex items-center gap-2 text-[#6b21a8] hover:text-[#581c87] font-bold text-base transition-colors group py-2"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100/80 text-[#6b21a8] group-hover:bg-purple-200/80 transition-colors">
-                  <Play className="h-4 w-4 fill-current ml-0.5" />
-                </span>
-                100% refund offer
-              </a>
             </Reveal>
           </div>
 
           {/* Right Column: Pointing-Student collage */}
           <Reveal delay={0.2} className="relative w-full h-[400px] sm:h-[460px] md:h-[500px]">
-            {/* Top Right Card (Male Student pointing left) */}
+            {/* Top Right Card (Male Professional) */}
             <div className="absolute top-0 right-2 w-[180px] sm:w-[220px] md:w-[250px] rounded-[32px] overflow-hidden shadow-xl border-4 border-white bg-white hover:scale-[1.01] transition-transform duration-300">
               <img
-                src="/pointing-student-male.jpg"
-                alt="Pointing Student Male"
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600"
+                alt="Professional portrait of a young man"
                 className="w-full h-auto object-cover aspect-[3/4]"
               />
             </div>
 
-            {/* Bottom Left Card (Female Student pointing left) */}
+            {/* Bottom Left Card (Female Professional) */}
             <div className="absolute bottom-2 left-2 w-[180px] sm:w-[220px] md:w-[250px] rounded-[32px] overflow-hidden shadow-xl border-4 border-white bg-white hover:scale-[1.01] transition-transform duration-300">
               <img
-                src="/pointing-student-female.jpg"
-                alt="Pointing Student Female"
+                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600"
+                alt="Professional portrait of a young woman"
                 className="w-full h-auto object-cover aspect-[3/4]"
               />
             </div>
@@ -133,7 +125,7 @@ export function Hero() {
             {/* Floating Pill Overlays */}
             <div className="absolute top-[8%] left-[2%] bg-white border border-slate-100 shadow-lg rounded-2xl py-2 px-3.5 flex items-center gap-1.5 hover:-translate-y-0.5 transition-transform duration-200 z-20">
               <span className="text-[11px] sm:text-xs font-bold text-purple-800 flex items-center gap-1">
-                <span>✨</span> 100% Refund
+                <span>✨</span> Lifetime Access
               </span>
             </div>
 

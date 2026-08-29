@@ -52,10 +52,6 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-border shadow-sm">
-      {/* Top Promo Bar */}
-      <div className="w-full bg-[#fef08a] text-black py-2 px-4 text-center text-xs sm:text-sm font-bold tracking-wide border-b border-yellow-100 uppercase">
-        Enjoy 100% Refund On Course Completion
-      </div>
       <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0 group">

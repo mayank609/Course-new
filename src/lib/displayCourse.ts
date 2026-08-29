@@ -11,6 +11,7 @@ export type DisplayCourse = {
   slug?: string;
   imageUrl?: string;
   syllabusUrl?: string;
+  price?: number;
 };
 
 export function toDisplayCourses(courses: Course[]): DisplayCourse[] {
@@ -24,6 +25,7 @@ export function toDisplayCourses(courses: Course[]): DisplayCourse[] {
     slug: c.slug,
     imageUrl: c.imageUrl,
     syllabusUrl: c.syllabusUrl,
+    price: c.price,
   }));
 }
 
@@ -35,5 +37,7 @@ export function sampleToDisplayCourses(courses: SampleCourse[]): DisplayCourse[]
     category: c.category,
     durationHours: c.durationHours,
     enrolledCount: c.enrolledCount,
+    slug: c.slug,
+    price: c.price,
   }));
 }

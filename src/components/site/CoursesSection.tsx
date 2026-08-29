@@ -12,42 +12,18 @@ import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
 
 function getCourse3DIcon(title: string) {
   const t = title.toLowerCase();
+  let iconSrc = "/ai-3d-icon.jpg";
   if (t.includes("excel")) {
-    return (
-      <div className="relative group/icon h-24 w-24 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-[0_12px_24px_rgba(16,185,129,0.3)] transition-transform group-hover:scale-105">
-        <span className="font-extrabold text-3xl">X</span>
-        <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-lg bg-emerald-500 border border-emerald-400 flex items-center justify-center shadow-md">
-          <BookOpen className="h-4 w-4 text-white" />
-        </div>
-      </div>
-    );
+    iconSrc = "/excel-3d-icon.jpg";
+  } else if (t.includes("word") || t.includes("document")) {
+    iconSrc = "/word-3d-icon.jpg";
+  } else if (t.includes("powerpoint") || t.includes("ppt") || t.includes("presentation")) {
+    iconSrc = "/powerpoint-3d-icon.jpg";
   }
-  if (t.includes("word") || t.includes("document")) {
-    return (
-      <div className="relative group/icon h-24 w-24 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-[0_12px_24px_rgba(37,99,235,0.3)] transition-transform group-hover:scale-105">
-        <span className="font-extrabold text-3xl">W</span>
-        <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-lg bg-blue-500 border border-blue-400 flex items-center justify-center shadow-md">
-          <Laptop className="h-4 w-4 text-white" />
-        </div>
-      </div>
-    );
-  }
-  if (t.includes("powerpoint") || t.includes("ppt") || t.includes("presentation")) {
-    return (
-      <div className="relative group/icon h-24 w-24 rounded-2xl bg-rose-600 flex items-center justify-center text-white shadow-[0_12px_24px_rgba(225,29,72,0.3)] transition-transform group-hover:scale-105">
-        <span className="font-extrabold text-3xl">P</span>
-        <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-lg bg-rose-500 border border-rose-400 flex items-center justify-center shadow-md">
-          <Code2 className="h-4 w-4 text-white" />
-        </div>
-      </div>
-    );
-  }
+
   return (
-    <div className="relative group/icon h-24 w-24 rounded-2xl bg-purple-700 flex items-center justify-center text-white shadow-[0_12px_24px_rgba(109,40,217,0.3)] transition-transform group-hover:scale-105">
-      <Cpu className="h-10 w-10 text-white" />
-      <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-lg bg-purple-500 border border-purple-400 flex items-center justify-center shadow-md">
-        <Sparkles className="h-4 w-4 text-white" />
-      </div>
+    <div className="relative group/icon h-24 w-24 rounded-3xl overflow-hidden shadow-lg border border-slate-100/50 bg-white transition-transform duration-300 group-hover:scale-105">
+      <img src={iconSrc} alt={title} className="w-full h-full object-cover" />
     </div>
   );
 }
@@ -223,11 +199,11 @@ export function CoursesSection() {
                       <div className="flex items-center justify-between text-xs font-bold text-slate-400 pt-1">
                         <span className="flex items-center gap-1">
                           <Users className="h-3.5 w-3.5" />
-                          {Math.max(50, c.enrolledCount).toLocaleString()} Learners
+                          {Math.max(50, c.enrolledCount || 0).toLocaleString()} Learners
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />
-                          {c.durationHours} hrs
+                          {c.durationHours || 0} hrs
                         </span>
                       </div>
 
@@ -236,7 +212,7 @@ export function CoursesSection() {
                         <div className="text-left shrink-0">
                           <span className="block text-[9px] uppercase font-bold text-slate-400 tracking-wider">Price</span>
                           <span className="text-lg font-extrabold text-[#6b21a8]">
-                            ₹{c.price.toLocaleString()}
+                            ₹{(c.price || 499).toLocaleString()}
                           </span>
                         </div>
                         
