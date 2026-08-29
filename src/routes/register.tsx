@@ -8,6 +8,7 @@ import { Footer } from "@/components/site/Footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { trackMetaEvent } from "@/components/site/MetaPixel";
 
 const registerSchema = zod.object({
   name: zod.string().min(2, "Name must be at least 2 characters"),
@@ -53,6 +54,9 @@ function RegisterPage() {
       }
 
       toast.success("Account created successfully! Welcome, " + body.name + "!");
+      trackMetaEvent("CompleteRegistration", {
+        content_name: "Student Signup",
+      });
       navigate({ to: search.redirect });
     } catch (err) {
       toast.error((err as Error).message || "Registration failed");

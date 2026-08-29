@@ -49,3 +49,16 @@ export function useMetaPixelPageViews() {
     fbq?.("track", "PageView");
   }, [pathname]);
 }
+
+export function trackMetaEvent(event: string, data?: Record<string, unknown>) {
+  if (typeof window !== "undefined") {
+    const fbq = (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq;
+    if (fbq) {
+      if (data) {
+        fbq("track", event, data);
+      } else {
+        fbq("track", event);
+      }
+    }
+  }
+}

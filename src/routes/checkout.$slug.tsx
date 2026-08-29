@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { trackMetaEvent } from "@/components/site/MetaPixel";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,19 @@ function CheckoutPage() {
     queryKey: ["course", slug],
     queryFn: () => fetchCourse(slug),
   });
+
+  useEffect(() => {
+    if (course) {
+      trackMetaEvent("InitiateCheckout", {
+        content_name: course.title,
+        content_category: course.category,
+        content_ids: [course._id],
+        content_type: "product",
+        value: course.price,
+        currency: "INR",
+      });
+    }
+  }, [course]);
 
   // If unauthorized, redirect to login
   useEffect(() => {

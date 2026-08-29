@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { submitLead, type LeadSource } from "@/lib/api";
+import { trackMetaEvent } from "@/components/site/MetaPixel";
 
 const schema = z.object({
   name: z.string().min(2, "Please enter your name"),
@@ -41,6 +42,10 @@ export function LeadForm({
   async function onSubmit(values: Values) {
     try {
       await submitLead({ ...values, source, courseTitle });
+      trackMetaEvent("Lead", {
+        content_category: source,
+        content_name: courseTitle || "General Inquiry",
+      });
       toast.success("Thanks! Our team will reach out shortly.");
       form.reset();
     } catch (err) {

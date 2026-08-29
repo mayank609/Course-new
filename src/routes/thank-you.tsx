@@ -4,6 +4,8 @@ import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Play, BookOpen, Sparkles } from "lucide-react";
 import { z } from "zod";
+import { useEffect } from "react";
+import { trackMetaEvent } from "@/components/site/MetaPixel";
 
 const searchSchema = z.object({
   course: z.string().optional().catch(""),
@@ -16,6 +18,18 @@ export const Route = createFileRoute("/thank-you")({
 
 function ThankYouPage() {
   const { course } = Route.useSearch();
+
+  useEffect(() => {
+    // Track Purchase and CompleteRegistration events
+    trackMetaEvent("Purchase", {
+      content_name: course || "Course Purchase",
+      content_type: "product",
+      currency: "INR",
+    });
+    trackMetaEvent("CompleteRegistration", {
+      content_name: course || "Course Registration",
+    });
+  }, [course]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

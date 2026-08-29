@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { trackMetaEvent } from "@/components/site/MetaPixel";
 import { Clock, Users, CheckCircle2, ArrowLeft, Award, Flame, Sparkles, TrendingUp } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -69,6 +71,19 @@ function CourseDetailPage() {
     queryKey: ["course", slug],
     queryFn: () => fetchCourse(slug),
   });
+
+  useEffect(() => {
+    if (course) {
+      trackMetaEvent("ViewContent", {
+        content_name: course.title,
+        content_category: course.category,
+        content_ids: [course._id],
+        content_type: "product",
+        value: course.price,
+        currency: "INR",
+      });
+    }
+  }, [course]);
 
   const hasPurchased = student?.purchasedCourses?.includes(slug) ?? false;
 
