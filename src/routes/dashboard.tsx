@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { BookOpen, User, Phone, Mail, Award, ArrowRight, LogOut } from "lucide-react";
+import { BookOpen, User, Phone, Mail, Award, ArrowRight, LogOut, FileText, ClipboardList, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Course } from "@/lib/api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
@@ -15,6 +17,16 @@ export const Route = createFileRoute("/dashboard")({
 function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [expandedCourses, setExpandedCourses] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (courseId: string) => {
+    setExpandedCourses((prev) => {
+      const next = new Set(prev);
+      if (next.has(courseId)) next.delete(courseId);
+      else next.add(courseId);
+      return next;
+    });
+  };
 
   // Fetch Student Profile
   const { data: student, isLoading: isProfileLoading, isError: isProfileError } = useQuery({
@@ -37,7 +49,7 @@ function DashboardPage() {
       if (!res.ok) {
         throw new Error("Failed to fetch purchased courses");
       }
-      return res.json() as Promise<Array<{ id: string; title: string; category: string; slug: string; durationHours: number; shortDescription: string }>>;
+      return res.json() as Promise<Course[]>;
     },
     enabled: !!student,
   });
@@ -188,36 +200,131 @@ function DashboardPage() {
                       </div>
                     ) : (
                       <div className="grid gap-4">
-                        {courses.map((course) => (
-                          <div
-                            key={course.id}
-                            className="bg-card border border-border rounded-3xl p-6 shadow-[var(--shadow-card)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:shadow-md transition-shadow"
-                          >
-                            <div className="space-y-1.5 max-w-xl">
-                              <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-                                {course.category}
-                              </span>
-                              <h3 className="font-serif text-xl font-bold tracking-tight">
-                                {course.title}
-                              </h3>
-                              <p className="text-sm text-muted-foreground line-clamp-2">
-                                {course.shortDescription}
-                              </p>
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
-                                <span>{course.durationHours} hrs of content</span>
-                                <span className="flex items-center gap-1 text-emerald-600 font-semibold">
-                                  <Award className="h-3.5 w-3.5" /> Full Access
-                                </span>
+                        {courses.map((course) => {
+                          const isExpanded = expandedCourses.has(course._id);
+                          return (
+                            <div
+                              key={course._id}
+                              className="bg-card border border-border rounded-3xl p-6 shadow-[var(--shadow-card)] flex flex-col gap-6 hover:shadow-md transition-shadow"
+                            >
+                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 w-full">
+                                <div className="space-y-1.5 max-w-xl">
+                                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                                    {course.category}
+                                  </span>
+                                  <h3 className="font-serif text-xl font-bold tracking-tight">
+                                    {course.title}
+                                  </h3>
+                                  <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {course.shortDescription}
+                                  </p>
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+                                    <span>{course.durationHours} hrs of content</span>
+                                    <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+                                      <Award className="h-3.5 w-3.5" /> Full Access
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto shrink-0">
+                                  <Button
+                                    variant="outline"
+                                    rounded-full
+                                    onClick={() => toggleExpand(course._id)}
+                                    className="flex items-center gap-1.5"
+                                  >
+                                    {isExpanded ? (
+                                      <>Hide Materials <ChevronUp className="h-4 w-4" /></>
+                                    ) : (
+                                      <>View Materials <ChevronDown className="h-4 w-4" /></>
+                                    )}
+                                  </Button>
+                                  <Button asChild rounded-full className="shrink-0 group">
+                                    <Link to={`/courses/${course.slug}`}>
+                                      Start Learning{" "}
+                                      <ArrowRight className="h-4 w-4 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
+                                    </Link>
+                                  </Button>
+                                </div>
                               </div>
+
+                              {isExpanded && (
+                                <div className="pt-6 border-t border-border w-full grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                  {/* Classwork */}
+                                  <div className="space-y-3">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                                      <FileText className="h-3.5 w-3.5 text-primary" /> Classworks ({course.classworks?.length || 0})
+                                    </h4>
+                                    {course.classworks && course.classworks.length > 0 ? (
+                                      <ul className="space-y-2">
+                                        {course.classworks.map((cw, idx) => (
+                                          <li key={idx} className="text-sm">
+                                            {cw.link ? (
+                                              <a href={cw.link} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors hover:underline flex items-center gap-1">
+                                                • {cw.title}
+                                              </a>
+                                            ) : (
+                                              <span className="text-muted-foreground flex items-center gap-1">• {cw.title}</span>
+                                            )}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground italic">No classworks yet</p>
+                                    )}
+                                  </div>
+
+                                  {/* Assignments */}
+                                  <div className="space-y-3">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
+                                      <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> Assignments ({course.assignments?.length || 0})
+                                    </h4>
+                                    {course.assignments && course.assignments.length > 0 ? (
+                                      <ul className="space-y-2">
+                                        {course.assignments.map((as, idx) => (
+                                          <li key={idx} className="text-sm">
+                                            {as.link ? (
+                                              <a href={as.link} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors hover:underline flex items-center gap-1">
+                                                • {as.title}
+                                              </a>
+                                            ) : (
+                                              <span className="text-muted-foreground flex items-center gap-1">• {as.title}</span>
+                                            )}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground italic">No assignments yet</p>
+                                    )}
+                                  </div>
+
+                                  {/* Quizzes */}
+                                  <div className="space-y-3">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
+                                      <HelpCircle className="h-3.5 w-3.5 text-emerald-600" /> Quizzes ({course.quizzes?.length || 0})
+                                    </h4>
+                                    {course.quizzes && course.quizzes.length > 0 ? (
+                                      <ul className="space-y-2">
+                                        {course.quizzes.map((qz, idx) => (
+                                          <li key={idx} className="text-sm">
+                                            {qz.link ? (
+                                              <a href={qz.link} target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors hover:underline flex items-center gap-1">
+                                                • {qz.title}
+                                              </a>
+                                            ) : (
+                                              <span className="text-muted-foreground flex items-center gap-1">• {qz.title}</span>
+                                            )}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground italic">No quizzes yet</p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            <Button asChild rounded-full className="shrink-0 group">
-                              <Link to={`/courses/${course.slug}`}>
-                                Start Learning{" "}
-                                <ArrowRight className="h-4 w-4 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
-                              </Link>
-                            </Button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>

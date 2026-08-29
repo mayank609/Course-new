@@ -98,6 +98,18 @@
         <textarea name="highlights" rows="4"></textarea>
       </div>
       <div class="full">
+        <label>Quizzes (Format: Title | Link — one per line)</label>
+        <textarea name="quizzes" rows="3" placeholder="Quiz 1 | https://example.com/quiz-link"></textarea>
+      </div>
+      <div class="full">
+        <label>Assignments (Format: Title | Link — one per line)</label>
+        <textarea name="assignments" rows="3" placeholder="Assignment 1 | https://example.com/assignment-link"></textarea>
+      </div>
+      <div class="full">
+        <label>Classworks (Format: Title | Link — one per line)</label>
+        <textarea name="classworks" rows="3" placeholder="Slides/Notes | https://example.com/classwork-link"></textarea>
+      </div>
+      <div class="full">
         <label>Recommended courses (shown as paid add-ons the student can also buy at checkout &mdash; hold Ctrl/Cmd to pick 2&ndash;3)</label>
         <select name="recommendedCourses" id="recommended-select" multiple size="6"></select>
       </div>
@@ -194,12 +206,19 @@
     form.reset();
     populateCategorySelect(course?.category);
     populateRecommendedSelect(course?._id, course?.recommendedCourses);
+    const formatList = (list) => {
+      if (!list || !Array.isArray(list)) return "";
+      return list.map(item => item.link ? `${item.title} | ${item.link}` : item.title).join("\n");
+    };
     if (course) {
       for (const [key, value] of Object.entries(course)) {
         const field = form.elements[key];
         if (!field) continue;
         if (key === "published") field.checked = Boolean(value);
         else if (key === "highlights") field.value = (value || []).join("\n");
+        else if (key === "quizzes" || key === "assignments" || key === "classworks") {
+          field.value = formatList(value);
+        }
         else if (key === "recommendedCourses") continue; // handled by populateRecommendedSelect
         else field.value = value ?? "";
       }
@@ -230,6 +249,25 @@
     data.enrolledCount = data.enrolledCount ? Number(data.enrolledCount) : undefined;
     data.highlights = data.highlights ? data.highlights.split("\n").map((s) => s.trim()).filter(Boolean) : [];
     data.recommendedCourses = Array.from(form.elements.recommendedCourses.selectedOptions).map((o) => o.value);
+
+    const parseList = (text) => {
+      if (!text) return [];
+      return text.split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split("|");
+          return {
+            title: parts[0]?.trim() || "",
+            link: parts[1]?.trim() || ""
+          };
+        })
+        .filter(item => item.title);
+    };
+
+    data.quizzes = parseList(data.quizzes);
+    data.assignments = parseList(data.assignments);
+    data.classworks = parseList(data.classworks);
 
     try {
       if (editingId) {

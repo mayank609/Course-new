@@ -35,6 +35,18 @@ const courses = [
       "advanced-ms-excel-mastery-course",
       "ms-word-powerpoint-essentials-with-ai-course",
     ],
+    quizzes: [
+      { title: "Excel Fundamentals Quiz", link: "https://forms.gle/sampleExcelQuiz1" },
+      { title: "Formulas & Arithmetic Test", link: "https://forms.gle/sampleExcelQuiz2" }
+    ],
+    assignments: [
+      { title: "Workbook Formatting Assignment", link: "https://sheets.google.com/sampleAssignment1" },
+      { title: "Sum & Average Practice Sheets", link: "https://sheets.google.com/sampleAssignment2" }
+    ],
+    classworks: [
+      { title: "Class Slide: Introduction to Cells", link: "https://slides.google.com/sampleClasswork1" },
+      { title: "Basic Shortcuts Cheat Sheet", link: "https://drive.google.com/sampleCheatSheet" }
+    ]
   },
   {
     tag: "Trending",
@@ -54,6 +66,18 @@ const courses = [
     recommendedCourses: [
       "advance-word-powerpoint-mastery-with-ai-course",
     ],
+    quizzes: [
+      { title: "VLOOKUP & XLOOKUP Master Test", link: "https://forms.gle/sampleAdvExcelQuiz1" },
+      { title: "Macros & Pivot Tables Assessment", link: "https://forms.gle/sampleAdvExcelQuiz2" }
+    ],
+    assignments: [
+      { title: "Interactive Business Dashboard Project", link: "https://sheets.google.com/sampleAdvAssignment1" },
+      { title: "Automation Macro VBA Exercises", link: "https://sheets.google.com/sampleAdvAssignment2" }
+    ],
+    classworks: [
+      { title: "Class Slide: Advanced Lookup Logic", link: "https://slides.google.com/sampleAdvClasswork1" },
+      { title: "Dynamic Charting Guidelines PDF", link: "https://drive.google.com/sampleChartsGuidelines" }
+    ]
   },
   {
     tag: "Popular",
@@ -74,6 +98,18 @@ const courses = [
       "advance-word-powerpoint-mastery-with-ai-course",
       "ms-excel-essentials-course",
     ],
+    quizzes: [
+      { title: "Document Layouts & Formats Quiz", link: "https://forms.gle/sampleWordQuiz1" },
+      { title: "Slide Layout Hierarchy Test", link: "https://forms.gle/sampleWordQuiz2" }
+    ],
+    assignments: [
+      { title: "Corporate Flyer Design Assignment", link: "https://drive.google.com/sampleWordAssignment1" },
+      { title: "10-Slide Pitch Deck Creation", link: "https://slides.google.com/sampleWordAssignment2" }
+    ],
+    classworks: [
+      { title: "Class Slide: Principles of Design", link: "https://slides.google.com/sampleWordClasswork1" },
+      { title: "ChatGPT Prompt Templates Doc", link: "https://docs.google.com/sampleAIPrompts" }
+    ]
   },
   {
     tag: "Recommended",
@@ -93,6 +129,18 @@ const courses = [
     recommendedCourses: [
       "advanced-ms-excel-mastery-course",
     ],
+    quizzes: [
+      { title: "Advanced Formatting & Forms Quiz", link: "https://forms.gle/sampleAdvWordQuiz1" },
+      { title: "Copilot Automation Masterclass Test", link: "https://forms.gle/sampleAdvWordQuiz2" }
+    ],
+    assignments: [
+      { title: "Custom Master Slide Layout Project", link: "https://slides.google.com/sampleAdvWordAssignment1" },
+      { title: "Automated Mail Merge Report Document", link: "https://docs.google.com/sampleAdvWordAssignment2" }
+    ],
+    classworks: [
+      { title: "Class Slide: Slide Master Setup", link: "https://slides.google.com/sampleAdvWordClasswork1" },
+      { title: "Copilot API Integration Playbook", link: "https://drive.google.com/samplePlaybook" }
+    ]
   },
 ].map((c) => ({
   ...c,

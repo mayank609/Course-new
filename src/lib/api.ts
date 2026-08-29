@@ -1,3 +1,8 @@
+export type CourseMaterial = {
+  title: string;
+  link?: string;
+};
+
 export type Course = {
   _id: string;
   title: string;
@@ -14,6 +19,9 @@ export type Course = {
   highlights: string[];
   recommendedCourses: string[];
   recommendedCourseDetails?: Course[];
+  quizzes?: CourseMaterial[];
+  assignments?: CourseMaterial[];
+  classworks?: CourseMaterial[];
   imageUrl: string;
   syllabusUrl?: string;
   published: boolean;
