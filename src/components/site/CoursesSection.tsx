@@ -110,7 +110,21 @@ export function CoursesSection() {
             visible.map((c, i) => {
               return (
                 <Reveal key={c.key} delay={(i % 4) * 90}>
-                  <article className="group h-full overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1.5 hover:border-[color:var(--brand-gold)]/40 hover:shadow-[var(--shadow-elegant)]">
+                  <article className="relative group h-full overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1.5 hover:border-[color:var(--brand-gold)]/40 hover:shadow-[var(--shadow-elegant)]">
+                    {c.slug ? (
+                      <Link
+                        to="/courses/$slug"
+                        params={{ slug: c.slug }}
+                        className="absolute inset-0 z-10 cursor-pointer"
+                        aria-label={`View details of ${c.title}`}
+                      />
+                    ) : (
+                      <Link
+                        to="/courses"
+                        className="absolute inset-0 z-10 cursor-pointer"
+                        aria-label="View courses"
+                      />
+                    )}
                     <div className="aspect-video overflow-hidden">
                       <img
                         src={getCourseImage(c.category, c.imageUrl)}
@@ -152,7 +166,7 @@ export function CoursesSection() {
                         {c.price > 0 ? `₹${c.price}` : "Free"}
                       </div>
 
-                      <div className="mt-4 flex gap-2">
+                      <div className="mt-4 flex gap-2 relative z-20">
                         <Button
                           asChild
                           size="sm"
