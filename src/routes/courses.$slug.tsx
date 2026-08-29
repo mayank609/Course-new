@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Users, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Clock, Users, CheckCircle2, ArrowLeft, Award, Flame, Sparkles, TrendingUp } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,37 @@ import { Button } from "@/components/ui/button";
 import { useAdviserModal } from "@/components/site/AdviserModal";
 import { fetchCourse } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
+
+export function getTagBadge(tag: string) {
+  const t = tag.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  switch (t) {
+    case "bestseller":
+      return {
+        className: "bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border-amber-500/30",
+        icon: <Award className="h-3.5 w-3.5 text-amber-600" />,
+      };
+    case "trending":
+      return {
+        className: "bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 border-rose-500/30",
+        icon: <TrendingUp className="h-3.5 w-3.5 text-rose-600" />,
+      };
+    case "popular":
+      return {
+        className: "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border-emerald-500/30",
+        icon: <Flame className="h-3.5 w-3.5 text-emerald-600" />,
+      };
+    case "recommended":
+      return {
+        className: "bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 border-indigo-500/30",
+        icon: <Sparkles className="h-3.5 w-3.5 text-indigo-600" />,
+      };
+    default:
+      return {
+        className: "bg-primary/10 text-primary hover:bg-primary/20 border-primary/30",
+        icon: <Sparkles className="h-3.5 w-3.5 text-primary" />,
+      };
+  }
+}
 
 export const Route = createFileRoute("/courses/$slug")({
   component: CourseDetailPage,
@@ -82,9 +113,15 @@ function CourseDetailPage() {
                   />
                 </div>
                 <div className="mt-6 flex items-center gap-2">
-                  <Badge className="bg-accent text-accent-foreground rounded-full">
-                    {course.tag}
-                  </Badge>
+                  {(() => {
+                    const badgeData = getTagBadge(course.tag);
+                    return (
+                      <Badge className={`${badgeData.className} gap-1 rounded-full border shadow-none`}>
+                        {badgeData.icon}
+                        {course.tag}
+                      </Badge>
+                    );
+                  })()}
                   <Badge variant="secondary" className="rounded-full">
                     {course.category}
                   </Badge>

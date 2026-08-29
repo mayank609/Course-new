@@ -77,8 +77,9 @@ export function Hero() {
     <section className="px-4 pt-6">
       <div className="mx-auto max-w-7xl rounded-3xl bg-[image:var(--gradient-hero)] px-6 sm:px-10 py-10 lg:py-16 relative overflow-hidden">
         {/* Glow ornaments */}
-        <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-56 w-56 rounded-full bg-[color:var(--brand-gold)]/15 blur-3xl" />
+        <div className="pointer-events-none absolute -top-10 -left-10 h-64 w-64 rounded-full bg-violet-600/10 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/2 left-1/3 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-80 w-80 rounded-full bg-[color:var(--brand-gold)]/20 blur-3xl animate-float-slow" />
         
         {/* Carousel slide content viewport */}
         <div className="relative grid">
