@@ -1,4 +1,4 @@
-import { Sparkles, Star, ChevronLeft, ChevronRight, Award, TrendingUp, CheckCircle } from "lucide-react";
+import { Sparkles, Star, Play, Award, ShieldCheck } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/site/Reveal";
@@ -18,50 +18,7 @@ const companies = [
 ];
 
 export function Hero() {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [liveCount, setLiveCount] = useState(42);
-
-  const slides = [
-    {
-      badge: "Build Corporate Analytics Skills",
-      title: "Learn MS Office + AI from Experts & Become Job-Ready.",
-      description: "A complete learning ecosystem — Excel Basic to Advanced, Word, PowerPoint, AI with ChatGPT & Copilot, and Career Skills. Built for freshers, job seekers, and working professionals by Shubham Verma.",
-      image: "/instructor.jpeg",
-      primaryCta: { label: "Explore Courses", to: "/courses" },
-      secondaryCta: { label: "About Shubham", to: "/about" },
-      imageType: "trainer"
-    },
-    {
-      badge: "Direct Career Guidance",
-      title: "Unlock Top Corporate Jobs & Career Advancements.",
-      description: "Join over 4,000+ students who have successfully upskilled. Get 1-on-1 mock interviews, personalized resume evaluations, and direct access to 300+ hiring partners with an average salary hike of 57%.",
-      image: "",
-      primaryCta: { label: "Join Placements", to: "/courses" },
-      secondaryCta: { label: "Trainer Bio", to: "/about" },
-      imageType: "stats",
-      stats: [
-        { val: "57%", label: "Average Salary Hike" },
-        { val: "300+", label: "Hiring Partners" },
-        { val: "1-on-1", label: "Mock Interviews" }
-      ]
-    },
-    {
-      badge: "Industry Accredited Program",
-      title: "Earn Prestigious Dual Certificates & Credentials.",
-      description: "Validate your newly acquired Microsoft Office and AI automation skills. Showcase your verified completion badge directly on your LinkedIn profile and attract leading corporate recruiters.",
-      image: "/Cert1.webp",
-      primaryCta: { label: "Get Certified", to: "/courses" },
-      secondaryCta: { label: "View Courses", to: "/courses" },
-      imageType: "certificate"
-    }
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -74,182 +31,156 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="w-full bg-[image:var(--gradient-hero)] py-12 sm:py-16 lg:py-20 relative overflow-hidden border-b border-border/30">
-      {/* Glow ornaments */}
-      <div className="pointer-events-none absolute -top-10 -left-10 h-64 w-64 rounded-full bg-violet-600/10 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/2 left-1/3 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-80 w-80 rounded-full bg-[color:var(--brand-gold)]/20 blur-3xl animate-float-slow" />
+    <section className="w-full bg-[#f8fafc] py-12 sm:py-16 lg:py-20 relative overflow-hidden border-b border-border/30">
+      {/* Background Ornaments */}
+      <div className="pointer-events-none absolute -top-10 -left-10 h-64 w-64 rounded-full bg-purple-600/5 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 left-1/3 h-56 w-56 rounded-full bg-emerald-500/5 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-80 w-80 rounded-full bg-yellow-500/5 blur-3xl" />
 
       <div className="mx-auto max-w-7xl px-6 sm:px-10 relative">
-        {/* Carousel slide content viewport */}
-        <div className="relative grid">
-          {slides.map((slide, idx) => {
-            const isActive = idx === currentSlide;
-            return (
-              <div
-                key={idx}
-                className={`col-start-1 row-start-1 w-full grid lg:grid-cols-2 gap-10 items-center transition-all duration-700 ease-in-out ${
-                  isActive ? "opacity-100 scale-100 translate-x-0 pointer-events-auto z-10" : "opacity-0 scale-95 translate-x-12 pointer-events-none z-0"
-                }`}
-              >
-                {/* Left Side: Content */}
-                <div className="space-y-5 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary/95 bg-primary/5 border border-primary/10 px-3.5 py-1 rounded-full uppercase tracking-wider">
-                      <Sparkles className="h-4 w-4 text-[color:var(--brand-gold-foreground)]" />
-                      {slide.badge}
-                    </div>
-                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-3 py-1 rounded-full uppercase tracking-wider">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" />
-                      </span>
-                      Live · {liveCount} students online
-                    </div>
-                  </div>
-
-                  <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.15] text-[color:var(--brand-dark)]">
-                    {slide.title}
-                  </h1>
-                  
-                  <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-                    {slide.description}
-                  </p>
-                  
-                  <div className="flex flex-wrap gap-3">
-                    <Button
-                      asChild
-                      size="lg"
-                      className="shine rounded-full bg-[image:var(--gradient-primary)] text-white shadow-[var(--shadow-elegant)] hover:-translate-y-0.5 hover:shadow-xl transition-all"
-                    >
-                      <Link to={slide.primaryCta.to as "/"}>{slide.primaryCta.label}</Link>
-                    </Button>
-                    <Button
-                      asChild
-                      size="lg"
-                      variant="outline"
-                      className="rounded-full border-[color:var(--brand-gold)]/50 text-[color:var(--brand-gold-foreground)] hover:bg-[color:var(--brand-gold)]/10 hover:-translate-y-0.5 transition-all"
-                    >
-                      <Link to={slide.secondaryCta.to as "/"}>{slide.secondaryCta.label}</Link>
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Right Side: Graphic/Image */}
-                <div className="relative flex justify-center items-center">
-                  
-                  {/* Trainer Image */}
-                  {slide.imageType === "trainer" && (
-                    <div className="relative group max-w-sm rounded-3xl overflow-hidden shadow-2xl border-4 border-white transition-all duration-300 hover:scale-[1.02]">
-                      <img
-                        src="/instructor.jpeg"
-                        alt="Shubham Verma — Trainer"
-                        className="w-full h-auto object-cover aspect-[4/5]"
-                      />
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
-                        <p className="text-xs uppercase tracking-wider text-amber-400 font-bold">Lead Instructor</p>
-                        <h4 className="font-serif text-lg font-bold">Shubham Verma</h4>
-                        <p className="text-xs text-white/80">Corporate MS Office & AI Automations Coach</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Certificate Mockup */}
-                  {slide.imageType === "certificate" && (
-                    <div className="relative group max-w-md rounded-2xl overflow-hidden shadow-2xl border border-border transition-all duration-300 hover:scale-[1.02] bg-white p-2">
-                      <img
-                        src="/Cert1.webp"
-                        alt="Sarvpratham Certificate of Completion"
-                        className="w-full h-auto object-contain rounded-lg"
-                      />
-                      <div className="absolute inset-0 border border-white/10 rounded-2xl pointer-events-none" />
-                    </div>
-                  )}
-
-                  {/* Stats Grid / Caricature */}
-                  {slide.imageType === "stats" && (
-                    <div className="relative group max-w-sm rounded-3xl overflow-hidden shadow-2xl border-4 border-white transition-all duration-300 hover:scale-[1.02] bg-white p-2">
-                      <img
-                        src="/upskilling-caricature.jpg"
-                        alt="Upskilling Milestones Caricature"
-                        className="w-full h-auto object-cover rounded-2xl aspect-square"
-                      />
-                    </div>
-                  )}
-
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Carousel Controls & Marquee footer */}
-        <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-border/30 pt-6">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           
-          {/* Trust Indicators */}
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-2">
-              {["aarav", "priya", "rohan", "sneha"].map((name) => (
-                <img
-                  key={name}
-                  src={`/avatars/${name}.png`}
-                  alt="Student avatar"
-                  className="h-9 w-9 rounded-full border-2 border-white object-cover transition-transform hover:-translate-y-1 hover:scale-110 hover:z-10"
-                />
-              ))}
-            </div>
-            <div className="text-sm">
-              <div className="flex items-center gap-0.5 text-[color:var(--brand-gold)]">
+          {/* Left Column: Hero Text */}
+          <div className="space-y-6 text-left">
+            <Reveal className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200/60 px-3 py-1 rounded-full uppercase tracking-wider">
+                <Award className="h-3.5 w-3.5" />
+                An Elite IIT Alumni & Expert-Led Initiative
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-red-600 bg-red-50 border border-red-200/50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-600" />
+                </span>
+                Live · {liveCount} learning
+              </span>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <h1 className="font-sans text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.1] text-slate-900 tracking-tight">
+                Level Up Your Career With Expert Mentorship & Internships For{" "}
+                <span className="inline-block bg-[#f3e8ff] text-[#6b21a8] px-4 py-1.5 rounded-3xl font-extrabold shadow-sm border border-purple-200/40 transform hover:scale-102 transition-transform">
+                  FREE
+                </span>
+              </h1>
+            </Reveal>
+
+            <Reveal delay={0.2}>
+              <p className="text-lg sm:text-xl text-slate-600 font-medium leading-relaxed max-w-xl">
+                With 100% Refund guarantee on course completion. Learn MS Office, Excel, PowerPoint & AI from corporate experts.
+              </p>
+            </Reveal>
+
+            {/* Google Stars Rating Row */}
+            <Reveal delay={0.25} className="flex items-center gap-3">
+              <div className="flex items-center gap-1 bg-white border border-slate-200 shadow-sm rounded-full py-1.5 px-3">
+                <svg className="h-4 w-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span className="text-xs font-bold text-slate-700">4.9/5 Google Rating</span>
+              </div>
+              <div className="flex text-amber-400">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-current" />
                 ))}
               </div>
-              <div className="text-muted-foreground text-xs">
-                Trusted by over <b className="text-foreground">4,000+</b> Students
+            </Reveal>
+
+            {/* CTA Buttons */}
+            <Reveal delay={0.3} className="flex flex-wrap items-center gap-4 pt-2">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-full bg-[#6b21a8] text-white hover:bg-[#581c87] shadow-lg shadow-purple-600/20 px-8 py-6 text-base font-bold transition-all hover:-translate-y-0.5"
+              >
+                <Link to="/courses">Explore Courses</Link>
+              </Button>
+              <a
+                href="#how-it-works"
+                className="flex items-center gap-2 text-[#6b21a8] hover:text-[#581c87] font-bold text-base transition-colors group py-2"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100/80 text-[#6b21a8] group-hover:bg-purple-200/80 transition-colors">
+                  <Play className="h-4 w-4 fill-current ml-0.5" />
+                </span>
+                100% refund offer
+              </a>
+            </Reveal>
+          </div>
+
+          {/* Right Column: Pointing-Student collage */}
+          <Reveal delay={0.2} className="relative w-full h-[400px] sm:h-[460px] md:h-[500px]">
+            {/* Top Right Card (Male Student pointing left) */}
+            <div className="absolute top-0 right-2 w-[180px] sm:w-[220px] md:w-[250px] rounded-[32px] overflow-hidden shadow-xl border-4 border-white bg-white hover:scale-[1.01] transition-transform duration-300">
+              <img
+                src="/pointing-student-male.jpg"
+                alt="Pointing Student Male"
+                className="w-full h-auto object-cover aspect-[3/4]"
+              />
+            </div>
+
+            {/* Bottom Left Card (Female Student pointing left) */}
+            <div className="absolute bottom-2 left-2 w-[180px] sm:w-[220px] md:w-[250px] rounded-[32px] overflow-hidden shadow-xl border-4 border-white bg-white hover:scale-[1.01] transition-transform duration-300">
+              <img
+                src="/pointing-student-female.jpg"
+                alt="Pointing Student Female"
+                className="w-full h-auto object-cover aspect-[3/4]"
+              />
+            </div>
+
+            {/* Floating Pill Overlays */}
+            <div className="absolute top-[8%] left-[2%] bg-white border border-slate-100 shadow-lg rounded-2xl py-2 px-3.5 flex items-center gap-1.5 hover:-translate-y-0.5 transition-transform duration-200 z-20">
+              <span className="text-[11px] sm:text-xs font-bold text-purple-800 flex items-center gap-1">
+                <span>✨</span> 100% Refund
+              </span>
+            </div>
+
+            <div className="absolute top-[28%] left-[0%] bg-white border border-slate-100 shadow-lg rounded-2xl py-2 px-3.5 flex items-center gap-1.5 hover:-translate-y-0.5 transition-transform duration-200 z-20">
+              <span className="text-[11px] sm:text-xs font-bold text-amber-700 flex items-center gap-1">
+                <span>💬</span> Instant doubt support
+              </span>
+            </div>
+
+            <div className="absolute top-[48%] left-[3%] bg-white border border-slate-100 shadow-lg rounded-2xl py-2 px-3.5 flex items-center gap-1.5 hover:-translate-y-0.5 transition-transform duration-200 z-20">
+              <span className="text-[11px] sm:text-xs font-bold text-emerald-700 flex items-center gap-1">
+                <span>💼</span> Internship Opportunities
+              </span>
+            </div>
+
+            {/* Google reviews overlay bottom right */}
+            <div className="absolute bottom-[8%] right-[2%] bg-white border border-slate-100 shadow-lg rounded-3xl py-2.5 px-4 flex flex-col gap-0.5 z-20 hover:-translate-y-0.5 transition-transform duration-200">
+              <div className="flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Google Reviews</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-bold text-slate-800">4.9/5</span>
+                <div className="flex text-amber-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span key={i} className="text-xs">★</span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Dots Indicator & Navigation buttons */}
-          <div className="flex items-center gap-4">
-            <div className="flex gap-1.5">
-              {slides.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentSlide(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${i === currentSlide ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"}`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
-                className="p-2 rounded-full border border-border bg-white text-muted-foreground hover:bg-secondary hover:text-foreground transition-all cursor-pointer shadow-sm"
-                aria-label="Previous slide"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
-                className="p-2 rounded-full border border-border bg-white text-muted-foreground hover:bg-secondary hover:text-foreground transition-all cursor-pointer shadow-sm"
-                aria-label="Next slide"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+          </Reveal>
 
         </div>
 
-        {/* Corporate logos marquee */}
-        <div className="mt-8 rounded-2xl bg-white/70 border border-white shadow-[var(--shadow-card)] py-4 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
+        {/* Corporate Placement Logos Marquee */}
+        <div className="mt-16 rounded-3xl bg-white border border-slate-100 shadow-sm py-5 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
+          <p className="text-center text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Our Alumni Work at Leading Companies</p>
           <div className="flex w-max marquee-track">
             {[0, 1].map((copy) => (
               <div
                 key={copy}
-                className="flex items-center gap-10 pr-10 shrink-0"
+                className="flex items-center gap-12 pr-12 shrink-0"
               >
                 {companies.map((c) => (
                   <img
@@ -257,7 +188,7 @@ export function Hero() {
                     src={c.logo}
                     alt={c.name}
                     title={c.name}
-                    className="h-6 sm:h-7 w-auto max-w-[110px] object-contain shrink-0 transition-transform duration-300 hover:scale-110"
+                    className="h-6 sm:h-7 w-auto max-w-[110px] object-contain shrink-0 opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300"
                   />
                 ))}
               </div>

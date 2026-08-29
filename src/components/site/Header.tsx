@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut, Search } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +9,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState("");
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -51,7 +52,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-border shadow-sm">
-      <div className="mx-auto max-w-7xl px-4 py-3.5 flex items-center justify-between gap-4">
+      {/* Top Promo Bar */}
+      <div className="w-full bg-[#fef08a] text-black py-2 px-4 text-center text-xs sm:text-sm font-bold tracking-wide border-b border-yellow-100 uppercase">
+        Enjoy 100% Refund On Course Completion
+      </div>
+      <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0 group">
           <img
@@ -132,7 +137,29 @@ export function Header() {
         </nav>
 
         {/* Desktop Auth Buttons */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (headerSearch.trim()) {
+                navigate({ to: "/courses", search: { search: headerSearch.trim() } });
+                setHeaderSearch("");
+              }
+            }}
+            className="relative"
+          >
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={headerSearch}
+              onChange={(e) => setHeaderSearch(e.target.value)}
+              className="bg-slate-50 border border-slate-200/80 rounded-full pl-4 pr-10 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600 transition-all text-slate-800 placeholder-slate-400 w-36 focus:w-48"
+            />
+            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-600 transition-colors">
+              <Search className="h-3.5 w-3.5" />
+            </button>
+          </form>
+
           {student ? (
             <div className="flex items-center gap-4">
               <Button asChild variant="ghost" className="rounded-full gap-2 font-medium" size="sm">
@@ -175,6 +202,28 @@ export function Header() {
       {open && (
         <div className="md:hidden border-t border-border bg-white shadow-xl animate-in slide-in-from-top duration-200">
           <div className="px-5 py-6 space-y-5">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (headerSearch.trim()) {
+                  navigate({ to: "/courses", search: { search: headerSearch.trim() } });
+                  setHeaderSearch("");
+                  setOpen(false);
+                }
+              }}
+              className="relative"
+            >
+              <input
+                type="text"
+                placeholder="Search courses..."
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200/80 rounded-full pl-4 pr-10 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-600 text-slate-800 placeholder-slate-400"
+              />
+              <button type="submit" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-600 transition-colors">
+                <Search className="h-4 w-4" />
+              </button>
+            </form>
             <nav className="flex flex-col gap-4">
               <Link
                 to="/"

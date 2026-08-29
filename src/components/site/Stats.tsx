@@ -1,23 +1,50 @@
+import { BookOpen, GraduationCap, MessageSquareCode, Award } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
-import { CountUp } from "@/components/site/CountUp";
 
 const stats = [
-  { value: 4000, decimals: 0, suffix: "+", l: "Students Trained" },
-  { value: 12, decimals: 0, suffix: "+ Yrs", l: "Experience" },
-  { value: 140, decimals: 0, suffix: "+", l: "Video Lessons" },
-  { value: 100, decimals: 0, suffix: "+ Hrs", l: "Content" },
+  {
+    icon: <BookOpen className="h-6 w-6 text-purple-600 shrink-0" />,
+    value: "50+",
+    label: "Courses",
+  },
+  {
+    icon: <GraduationCap className="h-6 w-6 text-purple-600 shrink-0" />,
+    value: "100k+",
+    label: "Learners",
+  },
+  {
+    icon: <MessageSquareCode className="h-6 w-6 text-purple-600 shrink-0" />,
+    value: "100k+",
+    label: "Doubts Solved",
+  },
+  {
+    icon: <Award className="h-6 w-6 text-purple-600 shrink-0" />,
+    value: "10k+",
+    label: "Student Projects",
+  },
 ];
 
 export function Stats() {
   return (
-    <section className="px-4 py-14">
-      <div className="mx-auto max-w-7xl rounded-3xl bg-[image:var(--gradient-hero)] border border-[color:var(--brand-gold)]/20 p-8 sm:p-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 text-center">
+    <section className="px-4 py-8 bg-white">
+      <div className="mx-auto max-w-7xl rounded-2xl bg-[#f5f3ff] border border-purple-100/60 p-6 md:p-8 flex flex-wrap justify-around items-center gap-8 shadow-sm">
         {stats.map((s, i) => (
-          <Reveal key={s.l} delay={i * 100} className="group cursor-default">
-            <div className="font-serif text-3xl sm:text-4xl font-bold text-primary transition-transform duration-300 group-hover:scale-110">
-              <CountUp value={s.value} decimals={s.decimals} suffix={s.suffix} />
+          <Reveal
+            key={s.label}
+            delay={i * 100}
+            className="flex items-center gap-4 group hover:-translate-y-0.5 transition-transform duration-200"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm border border-purple-50 group-hover:scale-105 transition-transform">
+              {s.icon}
             </div>
-            <div className="mt-1 text-sm text-muted-foreground font-medium">{s.l}</div>
+            <div>
+              <div className="text-xl sm:text-2xl font-extrabold text-purple-950 leading-none">
+                {s.value}
+              </div>
+              <div className="mt-1 text-xs sm:text-sm font-semibold text-purple-700/80">
+                {s.label}
+              </div>
+            </div>
           </Reveal>
         ))}
       </div>

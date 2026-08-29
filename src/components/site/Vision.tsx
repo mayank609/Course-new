@@ -1,86 +1,113 @@
-import { Award, User, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShieldCheck, HelpCircle, CheckCircle2, BadgePercent } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
-import { Link } from "@tanstack/react-router";
 
 export function Vision() {
   return (
-    <section className="px-4 py-16 sm:py-20 bg-[oklch(0.975_0.008_90)]">
-      <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-10 items-center">
-        <Reveal>
-          <p className="text-[color:var(--brand-gold-foreground)] font-semibold uppercase tracking-[0.2em] text-xs">
-            Meet Your Instructor
-          </p>
-          <h2 className="mt-3 font-serif text-3xl sm:text-4xl font-bold leading-tight">
-            Shubham Verma <span className="text-primary font-sans text-lg block sm:inline font-medium text-muted-foreground sm:ml-2">— Microsoft Certified Trainer</span>
+    <section id="how-it-works" className="px-4 py-16 sm:py-20 bg-[#2e1065] text-white">
+      <div className="mx-auto max-w-7xl">
+        {/* Title Header */}
+        <Reveal className="text-center">
+          <h2 className="font-sans text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Here's how you will learn <span className="text-[#a78bfa] underline decoration-yellow-400 decoration-3 underline-offset-4">for Free</span>
           </h2>
-          <p className="mt-4 text-muted-foreground leading-relaxed">
-            Shubham brings over a decade of real-world industry experience, helping professionals leverage Microsoft Office tools combined with cutting-edge AI (ChatGPT, Copilot) for automation, dynamic data analysis, and dashboard creation. His practical, task-focused teaching style simplifies complex workflows and makes you instantly job-ready.
+          <p className="mt-3 text-purple-200 font-medium text-sm sm:text-base max-w-2xl mx-auto">
+            Our unique 100% refund guarantee keeps you motivated to finish what you start and build job-ready skills.
           </p>
-          <div className="mt-8 grid sm:grid-cols-2 gap-4">
-            {[
-              {
-                icon: Award,
-                title: "Microsoft Certified",
-                desc: "Expert-led training modules",
-              },
-              { 
-                icon: Sparkles, 
-                title: "AI Integration Specialist", 
-                desc: "Learn ChatGPT & Copilot for productivity" 
-              },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="group rounded-2xl bg-white p-5 border border-border shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:border-[color:var(--brand-gold)]/40"
-              >
-                <f.icon className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" />
-                <div className="mt-3 font-bold text-sm sm:text-base">{f.title}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground mt-1">{f.desc}</div>
-              </div>
-            ))}
-          </div>
         </Reveal>
-        
-        <Reveal
-          delay={140}
-          className="relative rounded-3xl overflow-hidden border border-border shadow-[var(--shadow-elegant)] grid sm:grid-cols-[1fr_1.2fr] gap-6 bg-card p-6"
-        >
-          <div className="aspect-square rounded-2xl overflow-hidden bg-muted">
-            <img src="/instructor.jpeg" alt="Shubham Verma" className="w-full h-full object-cover" />
+
+        {/* Layout Grid */}
+        <div className="mt-12 grid lg:grid-cols-[1.3fr_1fr] gap-10 items-center">
+          
+          {/* Left Column: Vertically stacked step cards */}
+          <div className="space-y-6">
+            
+            {/* Step 1 */}
+            <Reveal delay={100} className="flex gap-6 p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group hover:bg-white/10 transition-colors">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#7c3aed] text-white shadow-md">
+                <BadgePercent className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-sans font-bold text-lg sm:text-xl text-white">1. Enroll</h3>
+                <p className="text-sm text-purple-200">
+                  Enroll into your preferred courses (Excel, PowerPoint, Word, or AI) by paying a nominal one-time registration fee.
+                </p>
+              </div>
+              <span className="absolute right-4 bottom-2 text-7xl font-extrabold text-white/5 select-none pointer-events-none group-hover:text-white/10 transition-colors">1</span>
+            </Reveal>
+
+            {/* Step 2 */}
+            <Reveal delay={150} className="flex gap-6 p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group hover:bg-white/10 transition-colors">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#7c3aed] text-white shadow-md">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-sans font-bold text-lg sm:text-xl text-white">2. Complete Course</h3>
+                <p className="text-sm text-purple-200">
+                  Watch all modules, complete the hands-on practice assignments, and complete the coursework chapters.
+                </p>
+              </div>
+              <span className="absolute right-4 bottom-2 text-7xl font-extrabold text-white/5 select-none pointer-events-none group-hover:text-white/10 transition-colors">2</span>
+            </Reveal>
+
+            {/* Step 3 */}
+            <Reveal delay={200} className="flex gap-6 p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group hover:bg-white/10 transition-colors">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#7c3aed] text-white shadow-md">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-sans font-bold text-lg sm:text-xl text-white">3. 100% Refund Awarded</h3>
+                <p className="text-sm text-purple-200">
+                  Submit your completion request and receive a 100% refund of your registration fee credited directly back to your bank account!
+                </p>
+              </div>
+              <span className="absolute right-4 bottom-2 text-7xl font-extrabold text-white/5 select-none pointer-events-none group-hover:text-white/10 transition-colors">3</span>
+            </Reveal>
+
           </div>
-          <div className="flex flex-col justify-between py-1">
-            <div>
-              <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-                Learn From The Best
-              </h3>
-              <p className="mt-2 text-muted-foreground text-xs leading-relaxed">
-                Get practical knowledge directly from an industry veteran. Our classes focus on live case studies, assignments, and real-life tasks.
+
+          {/* Right Column: Duration and Access Details */}
+          <Reveal delay={180} className="p-8 rounded-[36px] bg-gradient-to-br from-[#4c1d95] to-[#3b0764] border border-purple-500/20 shadow-2xl relative overflow-hidden">
+            <div className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full bg-purple-500/10 blur-xl" />
+            
+            <h3 className="font-sans text-xl sm:text-2xl font-extrabold text-white border-b border-purple-500/20 pb-4 mb-6">
+              Duration of Course
+            </h3>
+            
+            <ul className="space-y-6">
+              <li className="flex gap-4 items-start">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#fef08a] text-black">
+                  <span className="font-extrabold text-xs">✓</span>
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-sans font-bold text-sm sm:text-base text-yellow-300">Lifetime Access</h4>
+                  <p className="text-xs sm:text-sm text-purple-200 leading-relaxed">
+                    Get lifetime access to all learning materials, curriculum resources, and future video updates, even after receiving your 100% refund.
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex gap-4 items-start">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#fef08a] text-black">
+                  <span className="font-extrabold text-xs">✓</span>
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-sans font-bold text-sm sm:text-base text-yellow-300">3 Months Guarantee Window</h4>
+                  <p className="text-xs sm:text-sm text-purple-200 leading-relaxed">
+                    To claim your 100% refund, simply complete the course lessons and submit practice tasks within 3 months of your enrollment.
+                  </p>
+                </div>
+              </li>
+            </ul>
+
+            <div className="mt-8 flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 text-xs text-purple-200">
+              <HelpCircle className="h-5 w-5 shrink-0 text-[#fef08a]" />
+              <p>
+                Over <b className="text-white">92%</b> of active learners claim their refund successfully. Build your skills with zero financial risk.
               </p>
             </div>
-            
-            <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div className="rounded-xl bg-primary/5 p-2 border border-primary/10">
-                  <div className="font-serif text-lg font-bold text-primary">4,000+</div>
-                  <div className="text-[10px] text-muted-foreground">Students Trained</div>
-                </div>
-                <div className="rounded-xl bg-primary/5 p-2 border border-primary/10">
-                  <div className="font-serif text-lg font-bold text-primary">100+ Hrs</div>
-                  <div className="text-[10px] text-muted-foreground">Actionable Training</div>
-                </div>
-              </div>
-              
-              <Button
-                asChild
-                size="sm"
-                className="w-full rounded-full font-semibold"
-              >
-                <Link to="/about">More About Shubham</Link>
-              </Button>
-            </div>
-          </div>
-        </Reveal>
+          </Reveal>
+
+        </div>
       </div>
     </section>
   );

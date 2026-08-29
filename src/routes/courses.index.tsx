@@ -46,19 +46,26 @@ export function getTagBadge(tag: string) {
 }
 
 export const Route = createFileRoute("/courses/")({
-  validateSearch: z.object({ category: z.string().optional() }),
+  validateSearch: z.object({
+    category: z.string().optional(),
+    search: z.string().optional(),
+  }),
   component: CoursesPage,
 });
 
 function CoursesPage() {
   const { open: openAdviser } = useAdviserModal();
-  const { category: initialCategory } = Route.useSearch();
+  const { category: initialCategory, search: initialSearch } = Route.useSearch();
   const [category, setCategory] = useState<string | null>(initialCategory ?? null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch ?? "");
 
   useEffect(() => {
     setCategory(initialCategory ?? null);
   }, [initialCategory]);
+
+  useEffect(() => {
+    setSearchQuery(initialSearch ?? "");
+  }, [initialSearch]);
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ["courses"],
