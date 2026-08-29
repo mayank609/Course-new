@@ -6,7 +6,7 @@ import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { BookOpen, User, Phone, Mail, Award, ArrowRight, LogOut, FileText, ClipboardList, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, User, Phone, Mail, Award, ArrowRight, LogOut, FileText, ClipboardList, HelpCircle, ChevronDown, ChevronUp, PlayCircle, X } from "lucide-react";
 import { Course } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -14,10 +14,23 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
+function getYoutubeEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`;
+  }
+  if (url.length === 11 && !url.includes("/") && !url.includes(".")) {
+    return `https://www.youtube.com/embed/${url}?autoplay=1`;
+  }
+  return null;
+}
+
 function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [expandedCourses, setExpandedCourses] = useState<Set<string>>(new Set());
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
 
   const toggleExpand = (courseId: string) => {
     setExpandedCourses((prev) => {
@@ -248,7 +261,35 @@ function DashboardPage() {
                               </div>
 
                               {isExpanded && (
-                                <div className="pt-6 border-t border-border w-full grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="pt-6 border-t border-border w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                  {/* Video Lessons */}
+                                  <div className="space-y-3">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-red-600 flex items-center gap-1.5">
+                                      <PlayCircle className="h-3.5 w-3.5 text-red-600 animate-pulse" /> Video Lessons ({course.videos?.length || 0})
+                                    </h4>
+                                    {course.videos && course.videos.length > 0 ? (
+                                      <ul className="space-y-2">
+                                        {course.videos.map((vid, idx) => (
+                                          <li key={idx} className="text-sm">
+                                            {vid.link ? (
+                                              <button
+                                                onClick={() => setActiveVideoUrl(vid.link)}
+                                                className="text-foreground hover:text-primary text-left transition-colors hover:underline flex items-center gap-1.5 group/vid w-full"
+                                              >
+                                                <PlayCircle className="h-4 w-4 text-red-500 shrink-0 group-hover/vid:text-red-600" />
+                                                <span className="truncate">{vid.title}</span>
+                                              </button>
+                                            ) : (
+                                              <span className="text-muted-foreground flex items-center gap-1">• {vid.title}</span>
+                                            )}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground italic">No videos yet</p>
+                                    )}
+                                  </div>
+
                                   {/* Classwork */}
                                   <div className="space-y-3">
                                     <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
@@ -334,6 +375,40 @@ function DashboardPage() {
           )}
         </div>
       </main>
+
+      {/* Video Modal Popup */}
+      {activeVideoUrl && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10">
+            <button
+              onClick={() => setActiveVideoUrl(null)}
+              className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-black/60 text-white hover:bg-black/90 hover:scale-105 transition-all"
+              title="Close video"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            {(() => {
+              const ytEmbed = getYoutubeEmbedUrl(activeVideoUrl);
+              return ytEmbed ? (
+                <iframe
+                  src={ytEmbed}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <video
+                  src={activeVideoUrl}
+                  className="w-full h-full"
+                  controls
+                  autoPlay
+                ></video>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

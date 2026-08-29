@@ -22,6 +22,7 @@ export type Course = {
   quizzes?: CourseMaterial[];
   assignments?: CourseMaterial[];
   classworks?: CourseMaterial[];
+  videos?: CourseMaterial[];
   imageUrl: string;
   syllabusUrl?: string;
   published: boolean;

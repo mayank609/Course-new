@@ -1,7 +1,7 @@
 import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 
-const META_PIXEL_IDS = ["947778844694322", "1053403490723972"];
+const META_PIXEL_IDS = ["947778844694322"];
 
 function metaPixelInitScript(): string {
   const initCalls = META_PIXEL_IDS.map((id) => `fbq('init', '${id}');`).join("\n");

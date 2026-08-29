@@ -18,6 +18,7 @@ const courseSchema = new mongoose.Schema(
     quizzes: { type: [{ title: { type: String, required: true }, link: { type: String, default: "" } }], default: [] },
     assignments: { type: [{ title: { type: String, required: true }, link: { type: String, default: "" } }], default: [] },
     classworks: { type: [{ title: { type: String, required: true }, link: { type: String, default: "" } }], default: [] },
+    videos: { type: [{ title: { type: String, required: true }, link: { type: String, default: "" } }], default: [] },
     imageUrl: { type: String, default: "" },
     syllabusUrl: { type: String, default: "" },
     published: { type: Boolean, default: true },

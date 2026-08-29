@@ -46,6 +46,10 @@ const courses = [
     classworks: [
       { title: "Class Slide: Introduction to Cells", link: "https://slides.google.com/sampleClasswork1" },
       { title: "Basic Shortcuts Cheat Sheet", link: "https://drive.google.com/sampleCheatSheet" }
+    ],
+    videos: [
+      { title: "1. Introduction to Excel Basics", link: "https://www.youtube.com/watch?v=k1VUZEVuDJ8" },
+      { title: "2. Essential Formulas & Functions", link: "https://www.youtube.com/watch?v=0h61NphM030" }
     ]
   },
   {
@@ -77,6 +81,10 @@ const courses = [
     classworks: [
       { title: "Class Slide: Advanced Lookup Logic", link: "https://slides.google.com/sampleAdvClasswork1" },
       { title: "Dynamic Charting Guidelines PDF", link: "https://drive.google.com/sampleChartsGuidelines" }
+    ],
+    videos: [
+      { title: "1. Advanced Lookup Formulas (XLOOKUP)", link: "https://www.youtube.com/watch?v=0y03N8Yv9j0" },
+      { title: "2. Building Interactive Dashboards", link: "https://www.youtube.com/watch?v=K74_FNnlbZM" }
     ]
   },
   {
@@ -109,6 +117,10 @@ const courses = [
     classworks: [
       { title: "Class Slide: Principles of Design", link: "https://slides.google.com/sampleWordClasswork1" },
       { title: "ChatGPT Prompt Templates Doc", link: "https://docs.google.com/sampleAIPrompts" }
+    ],
+    videos: [
+      { title: "1. Document Layouts & Styles in Word", link: "https://www.youtube.com/watch?v=1yBnvvPszrs" },
+      { title: "2. Dynamic Presentation Slides in PPT", link: "https://www.youtube.com/watch?v=uD9tKk7nQyI" }
     ]
   },
   {
@@ -140,6 +152,10 @@ const courses = [
     classworks: [
       { title: "Class Slide: Slide Master Setup", link: "https://slides.google.com/sampleAdvWordClasswork1" },
       { title: "Copilot API Integration Playbook", link: "https://drive.google.com/samplePlaybook" }
+    ],
+    videos: [
+      { title: "1. Presentation Slides & Animations Masterclass", link: "https://www.youtube.com/watch?v=hZJszf1b_5E" },
+      { title: "2. Automating Documents with Copilot AI", link: "https://www.youtube.com/watch?v=Kz6i_6Hj05s" }
     ]
   },
 ].map((c) => ({
