@@ -74,13 +74,13 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="px-4 pt-6">
-      <div className="mx-auto max-w-7xl rounded-3xl bg-[image:var(--gradient-hero)] px-6 sm:px-10 py-10 lg:py-16 relative overflow-hidden">
-        {/* Glow ornaments */}
-        <div className="pointer-events-none absolute -top-10 -left-10 h-64 w-64 rounded-full bg-violet-600/10 blur-3xl" />
-        <div className="pointer-events-none absolute top-1/2 left-1/3 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-80 w-80 rounded-full bg-[color:var(--brand-gold)]/20 blur-3xl animate-float-slow" />
-        
+    <section className="w-full bg-[image:var(--gradient-hero)] py-12 sm:py-16 lg:py-20 relative overflow-hidden border-b border-border/30">
+      {/* Glow ornaments */}
+      <div className="pointer-events-none absolute -top-10 -left-10 h-64 w-64 rounded-full bg-violet-600/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 left-1/3 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-80 w-80 rounded-full bg-[color:var(--brand-gold)]/20 blur-3xl animate-float-slow" />
+
+      <div className="mx-auto max-w-7xl px-6 sm:px-10 relative">
         {/* Carousel slide content viewport */}
         <div className="relative grid">
           {slides.map((slide, idx) => {
@@ -166,22 +166,14 @@ export function Hero() {
                     </div>
                   )}
 
-                  {/* Stats Grid */}
+                  {/* Stats Grid / Caricature */}
                   {slide.imageType === "stats" && (
-                    <div className="w-full max-w-sm bg-white/90 border border-white backdrop-blur rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-                      <div className="flex gap-3 items-center">
-                        <TrendingUp className="h-10 w-10 text-[color:var(--brand-gold-foreground)]" />
-                        <h3 className="font-serif text-xl font-bold text-[color:var(--brand-dark)]">Upskilling Milestones</h3>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        {slide.stats?.map((st, i) => (
-                          <div key={i} className="flex items-center justify-between p-3.5 bg-primary/5 rounded-2xl border border-primary/10 transition-colors hover:bg-primary/10">
-                            <span className="text-sm font-semibold text-muted-foreground">{st.label}</span>
-                            <span className="text-lg font-bold text-foreground font-serif bg-white px-3 py-1 rounded-xl shadow-sm border border-border">{st.val}</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="relative group max-w-sm rounded-3xl overflow-hidden shadow-2xl border-4 border-white transition-all duration-300 hover:scale-[1.02] bg-white p-2">
+                      <img
+                        src="/upskilling-caricature.jpg"
+                        alt="Upskilling Milestones Caricature"
+                        className="w-full h-auto object-cover rounded-2xl aspect-square"
+                      />
                     </div>
                   )}
 

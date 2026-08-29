@@ -9,29 +9,15 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { BookOpen, User, Phone, Mail, Award, ArrowRight, LogOut, FileText, ClipboardList, HelpCircle, ChevronDown, ChevronUp, PlayCircle, X } from "lucide-react";
 import { Course } from "@/lib/api";
 import { toast } from "sonner";
-import { CustomVideoPlayer } from "@/components/site/CustomVideoPlayer";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
-function getYoutubeVideoId(url: string): string | null {
-  if (!url) return null;
-  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i);
-  if (ytMatch && ytMatch[1]) {
-    return ytMatch[1];
-  }
-  if (url.length === 11 && !url.includes("/") && !url.includes(".")) {
-    return url;
-  }
-  return null;
-}
-
 function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [expandedCourses, setExpandedCourses] = useState<Set<string>>(new Set());
-  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
 
   const toggleExpand = (courseId: string) => {
     setExpandedCourses((prev) => {
@@ -252,8 +238,8 @@ function DashboardPage() {
                                       <>View Materials <ChevronDown className="h-4 w-4" /></>
                                     )}
                                   </Button>
-                                  <Button asChild rounded-full className="shrink-0 group">
-                                    <Link to={`/courses/${course.slug}`}>
+                                  <Button asChild rounded-full className="shrink-0 group font-bold">
+                                    <Link to={`/learning/${course.slug}`}>
                                       Start Learning{" "}
                                       <ArrowRight className="h-4 w-4 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
                                     </Link>
@@ -273,13 +259,14 @@ function DashboardPage() {
                                         {course.videos.map((vid, idx) => (
                                           <li key={idx} className="text-sm">
                                             {vid.link ? (
-                                              <button
-                                                onClick={() => setActiveVideoUrl(vid.link)}
+                                              <Link
+                                                to={`/learning/${course.slug}`}
+                                                search={{ lesson: idx + 1 }}
                                                 className="text-foreground hover:text-primary text-left transition-colors hover:underline flex items-center gap-1.5 group/vid w-full"
                                               >
                                                 <PlayCircle className="h-4 w-4 text-red-500 shrink-0 group-hover/vid:text-red-600" />
                                                 <span className="truncate">{vid.title}</span>
-                                              </button>
+                                              </Link>
                                             ) : (
                                               <span className="text-muted-foreground flex items-center gap-1">• {vid.title}</span>
                                             )}
@@ -377,33 +364,6 @@ function DashboardPage() {
         </div>
       </main>
 
-      {/* Video Modal Popup */}
-      {activeVideoUrl && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10">
-            <button
-              onClick={() => setActiveVideoUrl(null)}
-              className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-black/60 text-white hover:bg-black/90 hover:scale-105 transition-all"
-              title="Close video"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            {(() => {
-              const ytVideoId = getYoutubeVideoId(activeVideoUrl);
-              return ytVideoId ? (
-                <CustomVideoPlayer videoId={ytVideoId} />
-              ) : (
-                <video
-                  src={activeVideoUrl}
-                  className="w-full h-full"
-                  controls
-                  autoPlay
-                ></video>
-              );
-            })()}
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>

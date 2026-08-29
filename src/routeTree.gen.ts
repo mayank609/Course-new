@@ -27,6 +27,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as InterviewPrepIndexRouteImport } from './routes/interview-prep.index'
 import { Route as CoursesIndexRouteImport } from './routes/courses.index'
 import { Route as BlogsIndexRouteImport } from './routes/blogs.index'
+import { Route as LearningSlugRouteImport } from './routes/learning.$slug'
 import { Route as InterviewPrepSlugRouteImport } from './routes/interview-prep.$slug'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
@@ -122,6 +123,11 @@ const BlogsIndexRoute = BlogsIndexRouteImport.update({
   path: '/blogs/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LearningSlugRoute = LearningSlugRouteImport.update({
+  id: '/learning/$slug',
+  path: '/learning/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InterviewPrepSlugRoute = InterviewPrepSlugRouteImport.update({
   id: '/interview-prep/$slug',
   path: '/interview-prep/$slug',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/interview-prep/$slug': typeof InterviewPrepSlugRoute
+  '/learning/$slug': typeof LearningSlugRoute
   '/blogs/': typeof BlogsIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/interview-prep/': typeof InterviewPrepIndexRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/interview-prep/$slug': typeof InterviewPrepSlugRoute
+  '/learning/$slug': typeof LearningSlugRoute
   '/blogs': typeof BlogsIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/interview-prep': typeof InterviewPrepIndexRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/checkout/$slug': typeof CheckoutSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/interview-prep/$slug': typeof InterviewPrepSlugRoute
+  '/learning/$slug': typeof LearningSlugRoute
   '/blogs/': typeof BlogsIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/interview-prep/': typeof InterviewPrepIndexRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/checkout/$slug'
     | '/courses/$slug'
     | '/interview-prep/$slug'
+    | '/learning/$slug'
     | '/blogs/'
     | '/courses/'
     | '/interview-prep/'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/checkout/$slug'
     | '/courses/$slug'
     | '/interview-prep/$slug'
+    | '/learning/$slug'
     | '/blogs'
     | '/courses'
     | '/interview-prep'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/checkout/$slug'
     | '/courses/$slug'
     | '/interview-prep/$slug'
+    | '/learning/$slug'
     | '/blogs/'
     | '/courses/'
     | '/interview-prep/'
@@ -311,6 +323,7 @@ export interface RootRouteChildren {
   CheckoutSlugRoute: typeof CheckoutSlugRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
   InterviewPrepSlugRoute: typeof InterviewPrepSlugRoute
+  LearningSlugRoute: typeof LearningSlugRoute
   BlogsIndexRoute: typeof BlogsIndexRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
   InterviewPrepIndexRoute: typeof InterviewPrepIndexRoute
@@ -444,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/learning/$slug': {
+      id: '/learning/$slug'
+      path: '/learning/$slug'
+      fullPath: '/learning/$slug'
+      preLoaderRoute: typeof LearningSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/interview-prep/$slug': {
       id: '/interview-prep/$slug'
       path: '/interview-prep/$slug'
@@ -495,6 +515,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutSlugRoute: CheckoutSlugRoute,
   CoursesSlugRoute: CoursesSlugRoute,
   InterviewPrepSlugRoute: InterviewPrepSlugRoute,
+  LearningSlugRoute: LearningSlugRoute,
   BlogsIndexRoute: BlogsIndexRoute,
   CoursesIndexRoute: CoursesIndexRoute,
   InterviewPrepIndexRoute: InterviewPrepIndexRoute,
