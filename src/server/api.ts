@@ -285,8 +285,189 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     return json({ purchase, addonPurchases, ok: true }, { status: 201 });
   }
 
+  if (method === "POST" && path === "/payment/create-order") {
+    const session = getStudentSession(request);
+    if (!session) return json({ error: "Not authenticated" }, { status: 401 });
+    const body = await readJson(request);
+    const { courseSlug, addonSlugs } = body as { courseSlug?: string; addonSlugs?: string[] };
+    if (!courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
+
+    const course = await Course.findOne({ slug: courseSlug });
+    if (!course) return json({ error: "Course not found" }, { status: 404 });
+
+    const student = await Student.findById(session.id);
+    if (!student) return json({ error: "Student not found" }, { status: 404 });
+
+    // Check if already purchased
+    if (student.purchasedCourses.includes(courseSlug)) {
+      return json({ error: "Course already purchased" }, { status: 400 });
+    }
+
+    // Calculate total price
+    let amount = course.price;
+    const requestedAddonSlugs = (addonSlugs ?? []).filter(
+      (slug) => slug !== course.slug && !student.purchasedCourses.includes(slug)
+    );
+    const addonCourses = requestedAddonSlugs.length
+      ? await Course.find({ slug: { $in: requestedAddonSlugs }, published: true })
+      : [];
+
+    for (const addon of addonCourses) {
+      amount += addon.price;
+    }
+
+    // Generate unique order ID
+    const orderId = "order_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    // Call Cashfree API to create the order
+    const origin = url.origin;
+    const returnUrl = `${origin}/checkout-callback?order_id=${orderId}`;
+
+    const clientId = process.env.CASHFREE_CLIENT_ID;
+    const clientSecret = process.env.CASHFREE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return json({ error: "Cashfree API credentials are not configured" }, { status: 500 });
+    }
+
+    const cashfreeResponse = await fetch("https://api.cashfree.com/pg/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-version": "2023-08-01",
+        "x-client-id": clientId,
+        "x-client-secret": clientSecret,
+      },
+      body: JSON.stringify({
+        order_id: orderId,
+        order_amount: amount,
+        order_currency: "INR",
+        customer_details: {
+          customer_id: student._id.toString(),
+          customer_email: student.email,
+          customer_phone: student.phone || "9999999999",
+          customer_name: student.name,
+        },
+        order_meta: {
+          return_url: returnUrl,
+        },
+      }),
+    });
+
+    const cfData = await cashfreeResponse.json() as { message?: string; payment_session_id?: string };
+    if (!cashfreeResponse.ok) {
+      console.error("Cashfree Order Creation Error:", cfData);
+      return json({ error: cfData.message || "Failed to initiate payment with Cashfree" }, { status: 500 });
+    }
+
+    const paymentSessionId = cfData.payment_session_id;
+
+    // Save temporary Purchase records in the database with status "pending"
+    await Purchase.create({
+      studentId: student._id,
+      studentName: student.name,
+      studentEmail: student.email,
+      courseSlug: course.slug,
+      courseTitle: course.title,
+      amount: course.price,
+      currency: course.currency || "INR",
+      status: "pending",
+      paymentId: orderId,
+    });
+
+    for (const addon of addonCourses) {
+      await Purchase.create({
+        studentId: student._id,
+        studentName: student.name,
+        studentEmail: student.email,
+        courseSlug: addon.slug,
+        courseTitle: addon.title,
+        amount: addon.price,
+        currency: addon.currency || "INR",
+        status: "pending",
+        paymentId: orderId,
+      });
+    }
+
+    return json({ paymentSessionId, orderId, ok: true }, { status: 201 });
+  }
+
+  if (method === "GET" && path === "/payment/verify") {
+    const session = getStudentSession(request);
+    if (!session) return json({ error: "Not authenticated" }, { status: 401 });
+
+    const orderId = url.searchParams.get("order_id");
+    if (!orderId) return json({ error: "order_id is required" }, { status: 400 });
+
+    const student = await Student.findById(session.id);
+    if (!student) return json({ error: "Student not found" }, { status: 404 });
+
+    const clientId = process.env.CASHFREE_CLIENT_ID;
+    const clientSecret = process.env.CASHFREE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return json({ error: "Cashfree API credentials are not configured" }, { status: 500 });
+    }
+
+    const cashfreeResponse = await fetch(`https://api.cashfree.com/pg/orders/${orderId}`, {
+      method: "GET",
+      headers: {
+        "x-api-version": "2023-08-01",
+        "x-client-id": clientId,
+        "x-client-secret": clientSecret,
+      },
+    });
+
+    const cfData = await cashfreeResponse.json() as { order_status?: string; message?: string };
+    if (!cashfreeResponse.ok) {
+      console.error("Cashfree Order Fetch Error:", cfData);
+      return json({ error: cfData.message || "Failed to fetch order status from Cashfree" }, { status: 500 });
+    }
+
+    if (cfData.order_status === "PAID") {
+      const pendingPurchases = await Purchase.find({ paymentId: orderId, status: "pending" });
+
+      let updatedSome = false;
+      let courseTitle = "";
+
+      for (const purchase of pendingPurchases) {
+        purchase.status = "completed";
+        await purchase.save();
+
+        if (!student.purchasedCourses.includes(purchase.courseSlug)) {
+          student.purchasedCourses.push(purchase.courseSlug);
+        }
+
+        const course = await Course.findOne({ slug: purchase.courseSlug });
+        if (course) {
+          course.enrolledCount = (course.enrolledCount || 0) + 1;
+          await course.save();
+          if (!courseTitle) {
+            courseTitle = course.title;
+          }
+        }
+        updatedSome = true;
+      }
+
+      if (updatedSome) {
+        await student.save();
+      } else {
+        const anyPurchases = await Purchase.find({ paymentId: orderId });
+        if (anyPurchases.length > 0) {
+          const mainCourse = await Course.findOne({ slug: anyPurchases[0].courseSlug });
+          if (mainCourse) courseTitle = mainCourse.title;
+        }
+      }
+
+      return json({ ok: true, courseTitle: courseTitle || "Course" });
+    } else {
+      return json({ ok: false, status: cfData.order_status, error: "Payment not completed or failed" });
+    }
+  }
+
   return json({ error: "Not found" }, { status: 404 });
 }
+
 
 async function handleAdminRoute(request: Request, path: string, url: URL): Promise<Response> {
   const method = request.method;

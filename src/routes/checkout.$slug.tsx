@@ -14,18 +14,35 @@ export const Route = createFileRoute("/checkout/$slug")({
   component: CheckoutPage,
 });
 
+const loadCashfreeScript = (): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    if ((window as any).Cashfree) {
+      resolve((window as any).Cashfree);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+    script.async = true;
+    script.onload = () => {
+      resolve((window as any).Cashfree);
+    };
+    script.onerror = () => {
+      reject(new Error("Failed to load Cashfree SDK"));
+    };
+    document.body.appendChild(script);
+  });
+};
+
 function CheckoutPage() {
   const navigate = useNavigate();
   const { slug } = Route.useParams();
   
-  // Simulated payment processing steps
+  // Cashfree payment processing steps
   const [paymentStep, setPaymentStep] = useState<number>(-1);
   const [paymentStepsTexts] = useState<string[]>([
     "Connecting to secure payment gateway...",
-    "Sending transaction details...",
-    "Authorizing payment with bank...",
-    "Securing final transaction token...",
-    "Payment approved! Finalizing purchase...",
+    "Loading payment gateway SDK...",
+    "Redirecting to Cashfree secure checkout...",
   ]);
 
   // Fetch Student Profile (to verify authentication)
@@ -72,49 +89,47 @@ function CheckoutPage() {
   const addonsTotal = selectedAddonCourses.reduce((sum, rec) => sum + rec.price, 0);
   const totalAmount = (course?.price ?? 0) + addonsTotal;
 
-  // Buy course mutation
-  const purchaseMutation = useMutation({
+  // Cashfree checkout mutation
+  const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/purchase", {
+      const res = await fetch("/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ courseSlug: slug, addonSlugs: Array.from(selectedAddons) }),
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Purchase failed");
+        throw new Error(data.error || "Order creation failed");
       }
-      return data;
+      return data as { paymentSessionId: string; orderId: string };
     },
-    onSuccess: () => {
-      toast.success("Course purchased successfully! Happy learning!");
-      navigate({ to: "/thank-you", search: { course: course?.title || slug } });
+    onSuccess: async (data) => {
+      try {
+        setPaymentStep(1); // Loading SDK
+        const CashfreeSDK = await loadCashfreeScript();
+        
+        setPaymentStep(2); // Redirecting
+        const cashfree = CashfreeSDK({ mode: "production" });
+        
+        cashfree.checkout({
+          paymentSessionId: data.paymentSessionId,
+          redirectTarget: "_self",
+        });
+      } catch (err) {
+        toast.error((err as Error).message || "Failed to initialize payment gateway");
+        setPaymentStep(-1);
+      }
     },
     onError: (err) => {
-      toast.error((err as Error).message || "Transaction failed");
+      toast.error((err as Error).message || "Failed to initiate checkout");
       setPaymentStep(-1);
     },
   });
 
-  // Start checkout simulation
   const handlePayment = () => {
-    setPaymentStep(0);
+    setPaymentStep(0); // Connecting to gateway
+    checkoutMutation.mutate();
   };
-
-  // Run the checkout simulation steps
-  useEffect(() => {
-    if (paymentStep === -1) return;
-
-    if (paymentStep < paymentStepsTexts.length) {
-      const timer = setTimeout(() => {
-        setPaymentStep((prev) => prev + 1);
-      }, 1500); // 1.5 seconds per step
-      return () => clearTimeout(timer);
-    } else {
-      // Completed simulation steps, now execute the actual purchase API call
-      purchaseMutation.mutate();
-    }
-  }, [paymentStep, purchaseMutation]);
 
   const isLoading = isProfileLoading || isCourseLoading;
   const isProcessingPayment = paymentStep >= 0;
@@ -293,9 +308,10 @@ function CheckoutPage() {
                   /* Pay now interactive block */
                   <Button
                     onClick={handlePayment}
+                    disabled={checkoutMutation.isPending}
                     className="w-full rounded-full py-6 text-base font-semibold shadow-[var(--shadow-elegant)] hover:-translate-y-0.5 transition-transform"
                   >
-                    <CreditCard className="h-5 w-5 mr-2" /> Pay ₹{totalAmount} (Mock Payment)
+                    <CreditCard className="h-5 w-5 mr-2" /> Pay ₹{totalAmount}
                   </Button>
                 )}
 

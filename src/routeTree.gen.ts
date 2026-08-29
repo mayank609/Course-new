@@ -20,6 +20,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as EnterpriseRouteImport } from './routes/enterprise'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CheckoutCallbackRouteImport } from './routes/checkout-callback'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -86,6 +87,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutCallbackRoute = CheckoutCallbackRouteImport.update({
+  id: '/checkout-callback',
+  path: '/checkout-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/checkout-callback': typeof CheckoutCallbackRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/enterprise': typeof EnterpriseRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/checkout-callback': typeof CheckoutCallbackRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/enterprise': typeof EnterpriseRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/checkout-callback': typeof CheckoutCallbackRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/enterprise': typeof EnterpriseRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/checkout-callback'
     | '/contact'
     | '/dashboard'
     | '/enterprise'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/checkout-callback'
     | '/contact'
     | '/dashboard'
     | '/enterprise'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/checkout-callback'
     | '/contact'
     | '/dashboard'
     | '/enterprise'
@@ -283,6 +295,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
+  CheckoutCallbackRoute: typeof CheckoutCallbackRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   EnterpriseRoute: typeof EnterpriseRoute
@@ -382,6 +395,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout-callback': {
+      id: '/checkout-callback'
+      path: '/checkout-callback'
+      fullPath: '/checkout-callback'
+      preLoaderRoute: typeof CheckoutCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -459,6 +479,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
+  CheckoutCallbackRoute: CheckoutCallbackRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   EnterpriseRoute: EnterpriseRoute,
