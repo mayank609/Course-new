@@ -194,7 +194,7 @@ function CourseDetailPage() {
                     asChild
                     className="w-full rounded-full py-6 font-semibold shadow-[var(--shadow-elegant)] hover:-translate-y-0.5 transition-transform"
                   >
-                    <Link to={`/checkout/${course.slug}`}>Buy Course Now</Link>
+                    <Link to={`/checkout/${course.slug}`}>Add to Cart</Link>
                   </Button>
                 )}
 

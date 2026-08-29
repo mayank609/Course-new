@@ -187,7 +187,7 @@ export function CoursesSection() {
                           className="shine flex-1 rounded-full bg-[image:var(--gradient-primary)] text-white hover:-translate-y-0.5 transition-transform text-xs"
                         >
                           <Link to={c.slug ? `/checkout/${c.slug}` : "/courses"}>
-                            Buy Now
+                            Add to Cart
                           </Link>
                         </Button>
                       </div>

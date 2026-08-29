@@ -222,11 +222,13 @@ function CoursesPage() {
                           )}
                         </Button>
                         <Button
+                          asChild
                           size="sm"
-                          onClick={() => openAdviser(c.title)}
-                          className="shine flex-1 rounded-full bg-[image:var(--gradient-primary)] text-white hover:-translate-y-0.5 transition-transform"
+                          className="shine flex-1 rounded-full bg-[image:var(--gradient-primary)] text-white hover:-translate-y-0.5 transition-transform text-xs"
                         >
-                          Enquire
+                          <Link to={c.slug ? `/checkout/${c.slug}` : "/courses"}>
+                            Add to Cart
+                          </Link>
                         </Button>
                       </div>
                     </div>
