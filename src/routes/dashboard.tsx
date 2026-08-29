@@ -9,19 +9,20 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { BookOpen, User, Phone, Mail, Award, ArrowRight, LogOut, FileText, ClipboardList, HelpCircle, ChevronDown, ChevronUp, PlayCircle, X } from "lucide-react";
 import { Course } from "@/lib/api";
 import { toast } from "sonner";
+import { CustomVideoPlayer } from "@/components/site/CustomVideoPlayer";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
 });
 
-function getYoutubeEmbedUrl(url: string): string | null {
+function getYoutubeVideoId(url: string): string | null {
   if (!url) return null;
   const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i);
   if (ytMatch && ytMatch[1]) {
-    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1`;
+    return ytMatch[1];
   }
   if (url.length === 11 && !url.includes("/") && !url.includes(".")) {
-    return `https://www.youtube.com/embed/${url}?autoplay=1`;
+    return url;
   }
   return null;
 }
@@ -388,14 +389,9 @@ function DashboardPage() {
               <X className="h-5 w-5" />
             </button>
             {(() => {
-              const ytEmbed = getYoutubeEmbedUrl(activeVideoUrl);
-              return ytEmbed ? (
-                <iframe
-                  src={ytEmbed}
-                  className="w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                ></iframe>
+              const ytVideoId = getYoutubeVideoId(activeVideoUrl);
+              return ytVideoId ? (
+                <CustomVideoPlayer videoId={ytVideoId} />
               ) : (
                 <video
                   src={activeVideoUrl}
