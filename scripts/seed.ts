@@ -31,6 +31,10 @@ const courses = [
       "10+ real-world practice assignments",
       "Dedicated chat & email doubt support",
     ],
+    recommendedCourses: [
+      "advanced-ms-excel-mastery-course",
+      "ms-word-powerpoint-essentials-with-ai-course",
+    ],
   },
   {
     tag: "Trending",
@@ -46,6 +50,9 @@ const courses = [
       "Lifetime access & regular updates",
       "Interactive business dashboard projects",
       "Job-ready resume booster certificate",
+    ],
+    recommendedCourses: [
+      "advance-word-powerpoint-mastery-with-ai-course",
     ],
   },
   {
@@ -63,6 +70,10 @@ const courses = [
       "Step-by-step presentation creation projects",
       "Certificate of completion",
     ],
+    recommendedCourses: [
+      "advance-word-powerpoint-mastery-with-ai-course",
+      "ms-excel-essentials-course",
+    ],
   },
   {
     tag: "Recommended",
@@ -78,6 +89,9 @@ const courses = [
       "Advanced Copilot & ChatGPT prompt guide",
       "Industry standard formatting templates",
       "Premium professional certificate",
+    ],
+    recommendedCourses: [
+      "advanced-ms-excel-mastery-course",
     ],
   },
 ].map((c) => ({
