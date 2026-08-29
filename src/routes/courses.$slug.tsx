@@ -95,7 +95,7 @@ function CourseDetailPage() {
                 <p className="mt-3 text-muted-foreground">{course.shortDescription}</p>
                 <div className="mt-5 flex items-center gap-6 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
-                    <Users className="h-4 w-4" /> {course.enrolledCount.toLocaleString()} enrolled
+                    <Users className="h-4 w-4" /> {Math.max(50, course.enrolledCount).toLocaleString()} enrolled
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Clock className="h-4 w-4" /> {course.durationHours} hrs

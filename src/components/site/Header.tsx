@@ -57,7 +57,7 @@ export function Header() {
           <img
             src="/sarvpratham-logo-transparent.png"
             alt="Sarvpratham Analytics"
-            className="h-12 sm:h-16 w-auto object-contain saturate-[1.25] contrast-[1.15] drop-shadow-[0_1px_2px_rgba(26,26,46,0.45)] transition-transform duration-300 group-hover:scale-102"
+            className="h-12 sm:h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-102"
           />
         </Link>
 

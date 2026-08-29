@@ -64,7 +64,12 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const category = url.searchParams.get("category");
     if (category) filter.category = category;
     const courses = await Course.find(filter).sort({ createdAt: -1 });
-    return json(courses);
+    const formatted = courses.map(c => {
+      const obj = c.toObject();
+      obj.enrolledCount = Math.max(50, obj.enrolledCount || 0);
+      return obj;
+    });
+    return json(formatted);
   }
 
   const courseMatch = path.match(/^\/courses\/([^/]+)$/);
@@ -74,7 +79,17 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const recommendedCourseDetails = course.recommendedCourses?.length
       ? await Course.find({ slug: { $in: course.recommendedCourses }, published: true })
       : [];
-    return json({ ...course.toObject(), recommendedCourseDetails });
+    
+    const courseObj = course.toObject();
+    courseObj.enrolledCount = Math.max(50, courseObj.enrolledCount || 0);
+    
+    const recommendedObj = recommendedCourseDetails.map(rec => {
+      const obj = rec.toObject();
+      obj.enrolledCount = Math.max(50, obj.enrolledCount || 0);
+      return obj;
+    });
+
+    return json({ ...courseObj, recommendedCourseDetails: recommendedObj });
   }
 
   if (method === "GET" && path === "/testimonials") {
@@ -215,7 +230,12 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const student = await Student.findById(session.id);
     if (!student) return json({ error: "Student not found" }, { status: 404 });
     const courses = await Course.find({ slug: { $in: student.purchasedCourses } });
-    return json(courses);
+    const formatted = courses.map(c => {
+      const obj = c.toObject();
+      obj.enrolledCount = Math.max(50, obj.enrolledCount || 0);
+      return obj;
+    });
+    return json(formatted);
   }
 
   if (method === "POST" && path === "/purchase") {

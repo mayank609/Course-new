@@ -103,7 +103,7 @@ export function CoursesSection() {
                       <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Users className="h-3.5 w-3.5" />
-                          {c.enrolledCount.toLocaleString()} Enrolled
+                          {Math.max(50, c.enrolledCount).toLocaleString()} Enrolled
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />
