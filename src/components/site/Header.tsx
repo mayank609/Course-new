@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, X, ChevronDown, User, LogOut, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -8,6 +8,20 @@ import { toast } from "sonner";
 export function Header() {
   const [open, setOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+    }
+    setShowDropdown(true);
+  };
+
+  const handleMouseLeave = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setShowDropdown(false);
+    }, 300); // 300ms grace delay
+  };
   const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false);
   const [headerSearch, setHeaderSearch] = useState("");
   
@@ -74,8 +88,8 @@ export function Header() {
           {/* Courses Dropdown */}
           <div
             className="relative"
-            onMouseEnter={() => setShowDropdown(true)}
-            onMouseLeave={() => setShowDropdown(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
             <button
               onClick={() => navigate({ to: "/courses" })}
