@@ -13,6 +13,7 @@ import { fetchCourses, fetchCategories } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
 import { sampleCourses } from "@/lib/sampleCourses";
 import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
+import { trackMetaEvent } from "@/components/site/MetaPixel";
 
 export function getTagBadge(tag: string) {
   const t = tag.toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -66,6 +67,17 @@ function CoursesPage() {
   useEffect(() => {
     setSearchQuery(initialSearch ?? "");
   }, [initialSearch]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const handler = setTimeout(() => {
+        trackMetaEvent("Search", {
+          search_string: searchQuery.trim(),
+        });
+      }, 800);
+      return () => clearTimeout(handler);
+    }
+  }, [searchQuery]);
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ["courses"],
@@ -233,7 +245,21 @@ function CoursesPage() {
                           size="sm"
                           className="shine flex-1 rounded-full bg-[image:var(--gradient-primary)] text-white hover:-translate-y-0.5 transition-transform text-xs"
                         >
-                          <Link to={c.slug ? `/checkout/${c.slug}` : "/courses"}>
+                          <Link 
+                            to={c.slug ? `/checkout/${c.slug}` : "/courses"}
+                            onClick={() => {
+                              if (c.slug) {
+                                trackMetaEvent("AddToCart", {
+                                  content_name: c.title,
+                                  content_category: c.category,
+                                  content_ids: [c.key],
+                                  content_type: "product",
+                                  value: c.price || 499,
+                                  currency: "INR",
+                                });
+                              }
+                            }}
+                          >
                             Add to Cart
                           </Link>
                         </Button>

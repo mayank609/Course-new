@@ -180,6 +180,16 @@ function CheckoutPage() {
       toast.error("Please enter your pincode");
       return;
     }
+    if (course) {
+      trackMetaEvent("AddPaymentInfo", {
+        content_name: course.title,
+        content_category: course.category,
+        content_ids: [course._id],
+        content_type: "product",
+        value: course.price,
+        currency: "INR",
+      });
+    }
     setPaymentStep(0); // Connecting to gateway
     checkoutMutation.mutate();
   };

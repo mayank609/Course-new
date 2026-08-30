@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Reveal } from "@/components/site/Reveal";
 import { fetchCourses, fetchCategories } from "@/lib/api";
 import { sampleCourses } from "@/lib/sampleCourses";
 import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
+import { trackMetaEvent } from "@/components/site/MetaPixel";
 
 function getCourse3DIcon(title: string, imageUrl?: string) {
   let iconSrc = imageUrl;
@@ -61,6 +62,17 @@ export function getTagBadge(tag: string) {
 export function CoursesSection() {
   const [category, setCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (search.trim()) {
+      const handler = setTimeout(() => {
+        trackMetaEvent("Search", {
+          search_string: search.trim(),
+        });
+      }, 800);
+      return () => clearTimeout(handler);
+    }
+  }, [search]);
 
   const { data: courses, isLoading } = useQuery({
     queryKey: ["courses"],
@@ -225,7 +237,21 @@ export function CoursesSection() {
                           size="sm"
                           className="rounded-full bg-[#6b21a8] text-white hover:bg-[#581c87] shadow-md shadow-purple-600/10 font-bold px-4 py-2.5 text-xs transition-transform hover:-translate-y-0.5"
                         >
-                          <Link to={c.slug ? `/checkout/${c.slug}` : "/courses"}>
+                          <Link 
+                            to={c.slug ? `/checkout/${c.slug}` : "/courses"}
+                            onClick={() => {
+                              if (c.slug) {
+                                trackMetaEvent("AddToCart", {
+                                  content_name: c.title,
+                                  content_category: c.category,
+                                  content_ids: [c.key],
+                                  content_type: "product",
+                                  value: c.price || 499,
+                                  currency: "INR",
+                                });
+                              }
+                            }}
+                          >
                             Add to Cart
                           </Link>
                         </Button>

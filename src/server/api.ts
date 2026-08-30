@@ -9,6 +9,7 @@ import { Student } from "./models/Student";
 import { Purchase } from "./models/Purchase";
 import { Testimonial } from "./models/Testimonial";
 import { sendPasswordResetEmail } from "./mail";
+import { sendWhatsAppPurchaseNotification } from "./whatsapp";
 import {
   adminCookieHeader,
   clearAdminCookieHeader,
@@ -300,6 +301,12 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       }
     }
 
+    if (student.phone) {
+      sendWhatsAppPurchaseNotification(student.name, student.phone, course.title).catch((err) => {
+        console.error("Error triggering dev WhatsApp notification:", err);
+      });
+    }
+
     await student.save();
 
     return json({ purchase, addonPurchases, ok: true }, { status: 201 });
@@ -495,6 +502,11 @@ const body = await readJson(request);
 
       if (updatedSome) {
         await student.save();
+        if (student.phone && courseTitle) {
+          sendWhatsAppPurchaseNotification(student.name, student.phone, courseTitle).catch((err) => {
+            console.error("Error triggering Cashfree WhatsApp notification:", err);
+          });
+        }
       } else {
         const anyPurchases = await Purchase.find({ paymentId: orderId });
         if (anyPurchases.length > 0) {

@@ -186,7 +186,7 @@ export function Hero() {
                     src={c.logo}
                     alt={c.name}
                     title={c.name}
-                    className="h-6 sm:h-7 w-auto max-w-[110px] object-contain shrink-0 opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300"
+                    className="h-6 sm:h-7 w-auto max-w-[110px] object-contain shrink-0 opacity-85 hover:opacity-100 hover:scale-[1.03] transition-all duration-300"
                   />
                 ))}
               </div>

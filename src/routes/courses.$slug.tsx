@@ -194,7 +194,21 @@ function CourseDetailPage() {
                     asChild
                     className="w-full rounded-full py-6 font-semibold shadow-[var(--shadow-elegant)] hover:-translate-y-0.5 transition-transform"
                   >
-                    <Link to={`/checkout/${course.slug}`}>Add to Cart</Link>
+                    <Link 
+                      to={`/checkout/${course.slug}`}
+                      onClick={() => {
+                        trackMetaEvent("AddToCart", {
+                          content_name: course.title,
+                          content_category: course.category,
+                          content_ids: [course._id],
+                          content_type: "product",
+                          value: course.price,
+                          currency: "INR",
+                        });
+                      }}
+                    >
+                      Add to Cart
+                    </Link>
                   </Button>
                 )}
 
