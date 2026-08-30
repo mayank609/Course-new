@@ -43,29 +43,29 @@ export function Vision() {
             </div>
           </Reveal>
 
-          {/* Right Column: Premium Certificate Mockup */}
+          {/* Right Column: Instructor Photo */}
           <Reveal delay={120} className="relative flex justify-center">
             <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/10 to-indigo-600/5 rounded-3xl filter blur-3xl -z-10 transform scale-95" />
-            
+
             <div className="relative group max-w-lg w-full rounded-[32px] overflow-hidden shadow-xl border border-slate-100 bg-white p-4 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl">
               <div className="rounded-2xl overflow-hidden border border-slate-100/50">
                 <img
-                  src="/Cert1.webp"
-                  alt="Sarvpratham Analytics Certificate of Completion"
-                  className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.01]"
+                  src="/instructor.jpeg"
+                  alt="Shubham Verma - Microsoft Certified Trainer"
+                  className="w-full h-auto aspect-[4/5] object-cover transition-transform duration-500 group-hover:scale-[1.01]"
                 />
               </div>
-              
+
               <div className="mt-4 p-2">
                 <div className="flex items-center gap-2 mb-1.5">
                   <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0" />
-                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Industry Recognized</span>
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Industry Expert</span>
                 </div>
                 <h3 className="font-sans text-base font-extrabold text-slate-800">
-                  Earn Verified Certification
+                  10+ Years of Corporate Training Experience
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
-                  Upon completion, receive a formal digital certificate of achievement verified by Sarvpratham Analytics to highlight on your resume and LinkedIn.
+                  Trusted by working professionals to teach Excel, automation, and AI-powered productivity workflows.
                 </p>
               </div>
             </div>
