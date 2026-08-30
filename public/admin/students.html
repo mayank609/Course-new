@@ -25,12 +25,13 @@
   <main class="main">
     <h1>Students Directory</h1>
     <p class="subtitle">Complete directory of students registered on the platform</p>
-    <div class="toolbar" style="margin-bottom: 20px;">
+    <div class="toolbar" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
       <select id="filter-purchase" style="padding: 8px 12px; border: 1px border; border-radius: 6px; font-weight: 500;">
         <option value="all">All Students</option>
         <option value="active">Active (Purchased)</option>
         <option value="inactive">Inactive (No Purchase)</option>
       </select>
+      <button id="btn-export" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Export CSV</button>
     </div>
     <div id="table-wrap"></div>
   </main>
@@ -103,6 +104,23 @@
     await requireAuth();
     wireLogout();
     document.getElementById("filter-purchase").addEventListener("change", render);
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const headers = [
+        { key: "name", label: "Name" },
+        { key: "email", label: "Email" },
+        { key: "phone", label: "Phone" },
+        { key: "purchasedCourses", label: "Purchased Courses" },
+        { key: "createdAt", label: "Registration Date" }
+      ];
+      const filter = document.getElementById("filter-purchase").value;
+      const filtered = students.filter((s) => {
+        const hasPurchased = (s.purchasedCourses || []).length > 0;
+        if (filter === "active") return hasPurchased;
+        if (filter === "inactive") return !hasPurchased;
+        return true;
+      });
+      downloadCSV(filtered, `students_${filter}.csv`, headers);
+    });
     await load();
   })();
 </script>

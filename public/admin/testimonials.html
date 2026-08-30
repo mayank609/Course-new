@@ -25,8 +25,9 @@
   <main class="main">
     <h1>Testimonials</h1>
     <p class="subtitle">Manage customer testimonials shown on the website</p>
-    <div class="toolbar">
+    <div class="toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <button class="btn-gold" id="new-testimonial">+ New Testimonial</button>
+      <button id="btn-export" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Export CSV</button>
     </div>
     <div id="table-wrap"></div>
   </main>
@@ -184,6 +185,19 @@
   (async () => {
     await requireAuth();
     wireLogout();
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const headers = [
+        { key: "name", label: "Student Name" },
+        { key: "role", label: "Role" },
+        { key: "company", label: "Company" },
+        { key: "rating", label: "Rating" },
+        { key: "videoUrl", label: "Video URL" },
+        { key: "avatarUrl", label: "Avatar URL" },
+        { key: "text", label: "Testimonial Text" },
+        { key: "published", label: "Published Status" }
+      ];
+      downloadCSV(testimonials, "testimonials.csv", headers);
+    });
     await load();
   })();
 </script>

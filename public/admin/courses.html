@@ -25,8 +25,9 @@
   <main class="main">
     <h1>Courses</h1>
     <p class="subtitle">Everything shown on the public site's course catalog</p>
-    <div class="toolbar">
+    <div class="toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <button class="btn-gold" id="new-course">+ New Course</button>
+      <button id="btn-export" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Export CSV</button>
     </div>
     <div id="table-wrap"></div>
   </main>
@@ -336,6 +337,21 @@
   (async () => {
     await requireAuth();
     wireLogout();
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const headers = [
+        { key: "title", label: "Title" },
+        { key: "slug", label: "Slug" },
+        { key: "category", label: "Category" },
+        { key: "tag", label: "Tag" },
+        { key: "level", label: "Level" },
+        { key: "durationHours", label: "Duration (Hours)" },
+        { key: "price", label: "Price (INR)" },
+        { key: "enrolledCount", label: "Enrolled Count" },
+        { key: "shortDescription", label: "Short Description" },
+        { key: "published", label: "Published Status" }
+      ];
+      downloadCSV(courses, "courses.csv", headers);
+    });
     await load();
   })();
 </script>

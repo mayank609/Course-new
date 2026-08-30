@@ -25,22 +25,25 @@
   <main class="main">
     <h1>Leads</h1>
     <p class="subtitle">Every enquiry submitted from the website</p>
-    <div class="toolbar">
-      <select id="filter-source">
-        <option value="">All sources</option>
-        <option value="newsletter">Newsletter</option>
-        <option value="contact">Contact</option>
-        <option value="corporate">Corporate</option>
-        <option value="enterprise">Enterprise</option>
-        <option value="interview-prep">BootCamps</option>
-        <option value="course-enquiry">Course Enquiry</option>
-      </select>
-      <select id="filter-status">
-        <option value="">All statuses</option>
-        <option value="new">New</option>
-        <option value="contacted">Contacted</option>
-        <option value="closed">Closed</option>
-      </select>
+    <div class="toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; gap: 10px;">
+        <select id="filter-source">
+          <option value="">All sources</option>
+          <option value="newsletter">Newsletter</option>
+          <option value="contact">Contact</option>
+          <option value="corporate">Corporate</option>
+          <option value="enterprise">Enterprise</option>
+          <option value="interview-prep">BootCamps</option>
+          <option value="course-enquiry">Course Enquiry</option>
+        </select>
+        <select id="filter-status">
+          <option value="">All statuses</option>
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <button id="btn-export" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Export CSV</button>
     </div>
     <div id="table-wrap"></div>
   </main>
@@ -116,6 +119,18 @@
     wireLogout();
     document.getElementById("filter-source").addEventListener("change", load);
     document.getElementById("filter-status").addEventListener("change", load);
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const headers = [
+        { key: "name", label: "Name" },
+        { key: "email", label: "Email" },
+        { key: "phone", label: "Phone" },
+        { key: "source", label: "Source" },
+        { key: "courseTitle", label: "Course Title" },
+        { key: "status", label: "Status" },
+        { key: "createdAt", label: "Date Received" }
+      ];
+      downloadCSV(leads, "leads.csv", headers);
+    });
     await load();
   })();
 </script>

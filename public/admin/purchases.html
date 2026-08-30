@@ -31,6 +31,10 @@
       <div class="stat-card"><div class="n" id="total-revenue">—</div><div class="l">Total Revenue (INR)</div></div>
     </div>
 
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+      <button id="btn-export" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Export CSV</button>
+    </div>
+
     <div id="table-wrap"></div>
   </main>
 </div>
@@ -98,6 +102,21 @@
   (async () => {
     await requireAuth();
     wireLogout();
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const headers = [
+        { key: "paymentId", label: "Transaction ID" },
+        { key: "studentName", label: "Student Name" },
+        { key: "studentEmail", label: "Student Email" },
+        { key: "studentPhone", label: "Student Phone" },
+        { key: "studentCity", label: "City" },
+        { key: "studentState", label: "State" },
+        { key: "studentPincode", label: "Pincode" },
+        { key: "courseTitle", label: "Course" },
+        { key: "amount", label: "Amount" },
+        { key: "createdAt", label: "Purchase Date" }
+      ];
+      downloadCSV(purchases, "purchases.csv", headers);
+    });
     await load();
   })();
 </script>
