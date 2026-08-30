@@ -10,15 +10,19 @@ import { fetchCourses, fetchCategories } from "@/lib/api";
 import { sampleCourses } from "@/lib/sampleCourses";
 import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
 
-function getCourse3DIcon(title: string) {
-  const t = title.toLowerCase();
-  let iconSrc = "/ai-3d-icon.jpg";
-  if (t.includes("excel")) {
-    iconSrc = "/excel-3d-icon.jpg";
-  } else if (t.includes("word") || t.includes("document")) {
-    iconSrc = "/word-3d-icon.jpg";
-  } else if (t.includes("powerpoint") || t.includes("ppt") || t.includes("presentation")) {
-    iconSrc = "/powerpoint-3d-icon.jpg";
+function getCourse3DIcon(title: string, imageUrl?: string) {
+  let iconSrc = imageUrl;
+  
+  if (!iconSrc) {
+    const t = title.toLowerCase();
+    iconSrc = "/ai-3d-icon.jpg";
+    if (t.includes("excel")) {
+      iconSrc = "/excel-3d-icon.jpg";
+    } else if (t.includes("word") || t.includes("document")) {
+      iconSrc = "/word-3d-icon.jpg";
+    } else if (t.includes("powerpoint") || t.includes("ppt") || t.includes("presentation")) {
+      iconSrc = "/powerpoint-3d-icon.jpg";
+    }
   }
 
   return (
@@ -152,7 +156,7 @@ export function CoursesSection() {
             ))}
           {!isLoading &&
             filtered.map((c, i) => {
-              const icon = getCourse3DIcon(c.title);
+              const icon = getCourse3DIcon(c.title, c.imageUrl);
               return (
                 <Reveal key={c.key} delay={(i % 4) * 90}>
                   <article className="relative group h-full overflow-hidden rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm hover:shadow-xl hover:border-purple-200/50 transition-all duration-300 flex flex-col items-center text-center">

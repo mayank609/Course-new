@@ -133,7 +133,7 @@ export function Hero() {
               </div>
 
               {/* Instant doubt support */}
-              <div className="absolute top-[32%] -left-[10%] bg-white border border-slate-100 shadow-md rounded-2xl py-2 px-3.5 flex items-center gap-1.5 hover:-translate-y-0.5 transition-transform duration-200 z-20">
+              <div className="absolute top-[10%] -right-[12%] bg-white border border-slate-100 shadow-md rounded-2xl py-2 px-3.5 flex items-center gap-1.5 hover:-translate-y-0.5 transition-transform duration-200 z-20">
                 <span className="text-[10px] sm:text-xs font-bold text-amber-700 flex items-center gap-1">
                   <span>💬</span> Instant doubt support
                 </span>
