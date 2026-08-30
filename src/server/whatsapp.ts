@@ -1,4 +1,10 @@
-export async function sendWhatsAppPurchaseNotification(studentName: string, studentPhone: string, courseTitle: string) {
+export async function sendWhatsAppPurchaseNotification(
+  studentName: string,
+  studentPhone: string,
+  courseTitle: string,
+  orderId: string = "N/A",
+  orderStatus: string = "PAID"
+) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const templateName = process.env.WHATSAPP_TEMPLATE_NAME || "course_purchase";
@@ -43,6 +49,14 @@ export async function sendWhatsAppPurchaseNotification(studentName: string, stud
             {
               type: "text",
               text: courseTitle
+            },
+            {
+              type: "text",
+              text: orderId
+            },
+            {
+              type: "text",
+              text: orderStatus
             }
           ]
         }
@@ -65,6 +79,15 @@ export async function sendWhatsAppPurchaseNotification(studentName: string, stud
     if (!res.ok) {
       console.error("WhatsApp: Template API rejected the request, trying fallback text message. Response:", data);
       
+      const fallbackText = `Thank you for choosing SarvPratham.
+Hi ${studentName}, your enrolment for ${courseTitle} is confirmed. 
+Order #${orderId} is ${orderStatus}. 
+
+Please Click "Access Course Here" Button below to Access your Course Now. 
+Link: https://sarvprathamanalytics.com/dashboard
+
+If it prompts for a login, kindly use your opted username/ email and password else reset your password with "Forget Password" link.`;
+
       // 2. Fallback text payload if the template is not registered or approved in the dashboard
       const textPayload = {
         messaging_product: "whatsapp",
@@ -72,8 +95,8 @@ export async function sendWhatsAppPurchaseNotification(studentName: string, stud
         to: formattedPhone,
         type: "text",
         text: {
-          preview_url: false,
-          body: `Hi ${studentName}, thank you for purchasing "${courseTitle}". You can now access your course from the dashboard!`
+          preview_url: true,
+          body: fallbackText
         }
       };
 

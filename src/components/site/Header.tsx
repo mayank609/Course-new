@@ -68,11 +68,11 @@ export function Header() {
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-border shadow-sm">
       <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 shrink-0 group">
+        <Link to="/" className="flex items-center gap-1 shrink-0 group">
           <img
             src="/sarvpratham-logo-transparent.png"
             alt="Sarvpratham Analytics"
-            className="h-12 sm:h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-102"
+            className="h-14 sm:h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
           />
         </Link>
 

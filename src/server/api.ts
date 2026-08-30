@@ -302,7 +302,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     }
 
     if (student.phone) {
-      sendWhatsAppPurchaseNotification(student.name, student.phone, course.title).catch((err) => {
+      sendWhatsAppPurchaseNotification(student.name, student.phone, course.title, mockPaymentId, "PAID").catch((err) => {
         console.error("Error triggering dev WhatsApp notification:", err);
       });
     }
@@ -503,7 +503,7 @@ const body = await readJson(request);
       if (updatedSome) {
         await student.save();
         if (student.phone && courseTitle) {
-          sendWhatsAppPurchaseNotification(student.name, student.phone, courseTitle).catch((err) => {
+          sendWhatsAppPurchaseNotification(student.name, student.phone, courseTitle, orderId, "PAID").catch((err) => {
             console.error("Error triggering Cashfree WhatsApp notification:", err);
           });
         }
