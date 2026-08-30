@@ -103,8 +103,8 @@ export function Hero() {
           </div>
 
           {/* Right Column: Centered collage with flexbox to prevent overlapping */}
-          <Reveal delay={0.2} className="relative w-full h-[450px] sm:h-[520px] flex items-center justify-center lg:justify-end">
-            <div className="relative w-[340px] sm:w-[420px] md:w-[460px] h-[360px] sm:h-[420px] md:h-[460px] flex gap-4 sm:gap-6 items-center">
+          <Reveal delay={0.2} className="relative w-full h-[380px] min-[360px]:h-[450px] sm:h-[520px] flex items-center justify-center lg:justify-end">
+            <div className="relative w-[280px] min-[360px]:w-[320px] min-[400px]:w-[350px] sm:w-[420px] md:w-[460px] h-[300px] min-[360px]:h-[340px] min-[400px]:h-[375px] sm:h-[420px] md:h-[460px] flex gap-3 sm:gap-6 items-center">
               
               {/* Left Card (Female Professional) */}
               <div className="w-1/2 rounded-[28px] sm:rounded-[36px] overflow-hidden shadow-lg border-4 border-white bg-white -translate-y-6 sm:-translate-y-8 hover:scale-[1.02] transition-all duration-300 shrink-0">
@@ -133,7 +133,7 @@ export function Hero() {
               </div>
 
               {/* Instant doubt support */}
-              <div className="absolute top-[10%] -right-[12%] bg-white border border-slate-100 shadow-md rounded-2xl py-2 px-3.5 flex items-center gap-1.5 hover:-translate-y-0.5 transition-transform duration-200 z-20">
+              <div className="absolute top-[10%] right-2 sm:-right-[10%] bg-white border border-slate-100 shadow-md rounded-2xl py-2 px-3.5 flex items-center gap-1.5 hover:-translate-y-0.5 transition-transform duration-200 z-20">
                 <span className="text-[10px] sm:text-xs font-bold text-amber-700 flex items-center gap-1">
                   <span>💬</span> Instant doubt support
                 </span>

@@ -27,12 +27,12 @@ const stats = [
 export function Stats() {
   return (
     <section className="px-4 py-8 bg-white">
-      <div className="mx-auto max-w-7xl rounded-2xl bg-[#f5f3ff] border border-purple-100/60 p-6 md:p-8 flex flex-wrap justify-around items-center gap-8 shadow-sm">
+      <div className="mx-auto max-w-7xl rounded-2xl bg-[#f5f3ff] border border-purple-100/60 p-6 md:p-8 grid grid-cols-2 md:grid-cols-4 items-center gap-6 sm:gap-8 justify-items-center shadow-sm">
         {stats.map((s, i) => (
           <Reveal
             key={s.label}
             delay={i * 100}
-            className="flex items-center gap-4 group hover:-translate-y-0.5 transition-transform duration-200"
+            className="flex items-center gap-3 sm:gap-4 group hover:-translate-y-0.5 transition-transform duration-200 w-full max-w-[170px] sm:max-w-none"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm border border-purple-50 group-hover:scale-105 transition-transform">
               {s.icon}
