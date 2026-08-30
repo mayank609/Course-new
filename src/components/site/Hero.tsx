@@ -18,13 +18,13 @@ const companies = [
 ];
 
 export function Hero() {
-  const [liveCount, setLiveCount] = useState(42);
+  const [liveCount, setLiveCount] = useState(100);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setLiveCount((prev) => {
         const delta = Math.floor(Math.random() * 7) - 3;
-        return Math.min(89, Math.max(28, prev + delta));
+        return Math.min(125, Math.max(75, prev + delta));
       });
     }, 6000);
     return () => clearInterval(timer);
