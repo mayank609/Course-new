@@ -106,20 +106,20 @@ export function Hero() {
           <Reveal delay={0.2} className="relative w-full h-[380px] min-[360px]:h-[450px] sm:h-[520px] flex items-center justify-center lg:justify-end">
             <div className="relative w-[280px] min-[360px]:w-[320px] min-[400px]:w-[350px] sm:w-[420px] md:w-[460px] h-[300px] min-[360px]:h-[340px] min-[400px]:h-[375px] sm:h-[420px] md:h-[460px] flex gap-3 sm:gap-6 items-center">
               
-              {/* Left Card (Female Professional) */}
+              {/* Left Card (Student) */}
               <div className="w-1/2 rounded-[28px] sm:rounded-[36px] overflow-hidden shadow-lg border-4 border-white bg-white -translate-y-6 sm:-translate-y-8 hover:scale-[1.02] transition-all duration-300 shrink-0">
                 <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=600"
-                  alt="Professional portrait of a young woman"
+                  src="/hero-student-1.webp"
+                  alt="Happy student giving a thumbs up while holding course folders"
                   className="w-full h-auto object-cover aspect-[3/4]"
                 />
               </div>
 
-              {/* Right Card (Male Professional) */}
+              {/* Right Card (Student) */}
               <div className="w-1/2 rounded-[28px] sm:rounded-[36px] overflow-hidden shadow-lg border-4 border-white bg-white translate-y-6 sm:translate-y-8 hover:scale-[1.02] transition-all duration-300 shrink-0">
                 <img
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600"
-                  alt="Professional portrait of a young man"
+                  src="/hero-student-2.webp"
+                  alt="Student smiling with backpack and notebooks"
                   className="w-full h-auto object-cover aspect-[3/4]"
                 />
               </div>
