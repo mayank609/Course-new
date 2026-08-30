@@ -1,6 +1,6 @@
 import { Reveal } from "@/components/site/Reveal";
 
-const WHATSAPP_SUPPORT_URL = "https://wa.me/919277411040";
+const WHATSAPP_COMMUNITY_URL = "https://chat.whatsapp.com/FvWRczrBEarKdAKFt1kvM3";
 
 function WhatsAppIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -19,19 +19,19 @@ export function CommunityCTA() {
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#25d366] shadow-lg">
             <WhatsAppIcon className="h-7 w-7 text-white" />
           </div>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold">Need Career Guidance? Chat with Us</h2>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold">Need Career Guidance? Join Our Community</h2>
           <p className="mt-2 text-white/85 max-w-xl mx-auto">
-            Talk directly to our course adviser on WhatsApp for personalized recommendations, syllabus queries, and career mapping.
+            Join our official WhatsApp group to connect with mentors, get personalized career guidance, syllabus queries, and upskilling support.
           </p>
           <div className="mt-6">
             <a
-              href={WHATSAPP_SUPPORT_URL}
+              href={WHATSAPP_COMMUNITY_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-[#25d366] hover:bg-[#20ba5a] text-white px-8 py-3 font-semibold shadow-xl transition-all hover:-translate-y-0.5"
             >
               <WhatsAppIcon className="h-5 w-5" />
-              Chat on WhatsApp
+              Join WhatsApp Community
             </a>
           </div>
         </div>

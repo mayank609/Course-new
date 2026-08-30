@@ -47,10 +47,10 @@ export function Hero() {
                 <Award className="h-3.5 w-3.5" />
                 An Elite IIT Alumni & Expert-Led Initiative
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-red-600 bg-red-50 border border-red-200/50 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                <span className="relative flex h-1.5 w-1.5">
+              <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-red-600 bg-red-50 border border-red-200/50 px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
+                <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-600" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" />
                 </span>
                 Live · {liveCount} learning
               </span>

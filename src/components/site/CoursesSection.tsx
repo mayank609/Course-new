@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Clock, Users, Flame, Award, TrendingUp, Sparkles, BookOpen, Laptop, Code2, Cpu } from "lucide-react";
+import { Search, Clock, Users, Flame, Award, TrendingUp, Sparkles, BookOpen, Laptop, Code2, Cpu, ChevronLeft, ChevronRight } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 import { fetchCourses, fetchCategories } from "@/lib/api";
 import { sampleCourses } from "@/lib/sampleCourses";
@@ -62,6 +62,18 @@ export function getTagBadge(tag: string) {
 export function CoursesSection() {
   const [category, setCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const sliderRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: "left" | "right") => {
+    if (sliderRef.current) {
+      const { scrollLeft, clientWidth } = sliderRef.current;
+      const scrollAmount = clientWidth * 0.8;
+      sliderRef.current.scrollTo({
+        left: direction === "left" ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   useEffect(() => {
     if (search.trim()) {
@@ -160,107 +172,132 @@ export function CoursesSection() {
           </Reveal>
         )}
 
-        {/* Courses Cards Grid */}
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {isLoading &&
-            Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-72 rounded-3xl" />
-            ))}
-          {!isLoading &&
-            filtered.map((c, i) => {
-              const icon = getCourse3DIcon(c.title, c.imageUrl);
-              return (
-                <Reveal key={c.key} delay={(i % 4) * 90}>
-                  <article className="relative group h-full overflow-hidden rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm hover:shadow-xl hover:border-purple-200/50 transition-all duration-300 flex flex-col items-center text-center">
-                    
-                    {/* Floating redirect click zone */}
-                    {c.slug ? (
-                      <Link
-                        to="/courses/$slug"
-                        params={{ slug: c.slug }}
-                        className="absolute inset-0 z-10 cursor-pointer"
-                        aria-label={`View details of ${c.title}`}
-                      />
-                    ) : (
-                      <Link
-                        to="/courses"
-                        className="absolute inset-0 z-10 cursor-pointer"
-                        aria-label="View courses"
-                      />
-                    )}
+        {/* Courses Cards Slider */}
+        <div className="relative group/slider mt-10">
+          {/* Left Arrow Button */}
+          <button
+            onClick={() => scroll("left")}
+            className="absolute -left-5 top-1/2 -translate-y-1/2 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white shadow-md flex items-center justify-center text-slate-600 hover:text-[#6b21a8] hover:border-purple-300 hover:scale-105 active:scale-95 transition-all opacity-0 group-hover/slider:opacity-100 hidden md:flex cursor-pointer"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
 
-                    {/* Centered 3D course logo */}
-                    <div className="my-6 flex items-center justify-center relative z-20">
-                      {icon}
-                    </div>
+          {/* Slider Scroll Track */}
+          <div
+            ref={sliderRef}
+            className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-6 pr-4 scrollbar-none"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {isLoading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-96 shrink-0 snap-start w-[290px] sm:w-[325px] lg:w-[calc(25%-18px)] rounded-[32px]" />
+              ))}
+            {!isLoading &&
+              filtered.map((c, i) => {
+                const icon = getCourse3DIcon(c.title, c.imageUrl);
+                return (
+                  <Reveal key={c.key} delay={(i % 4) * 90} className="shrink-0 snap-start w-[290px] sm:w-[325px] lg:w-[calc(25%-18px)] flex flex-col">
+                    <article className="relative group h-full overflow-hidden rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm hover:shadow-xl hover:border-purple-200/50 transition-all duration-300 flex flex-col items-center text-center">
+                      
+                      {/* Floating redirect click zone */}
+                      {c.slug ? (
+                        <Link
+                          to="/courses/$slug"
+                          params={{ slug: c.slug }}
+                          className="absolute inset-0 z-10 cursor-pointer"
+                          aria-label={`View details of ${c.title}`}
+                        />
+                      ) : (
+                        <Link
+                          to="/courses"
+                          className="absolute inset-0 z-10 cursor-pointer"
+                          aria-label="View courses"
+                        />
+                      )}
 
-                    <div className="w-full space-y-3 flex-grow flex flex-col">
-                      <div className="flex justify-center gap-1.5 flex-wrap">
-                        {c.tag && (
-                          <Badge className={`${getTagBadge(c.tag).className} gap-1 rounded-full border shadow-none font-bold text-[10px] uppercase`}>
-                            {getTagBadge(c.tag).icon}
-                            {c.tag}
+                      {/* Centered 3D course logo */}
+                      <div className="my-6 flex items-center justify-center relative z-20">
+                        {icon}
+                      </div>
+
+                      <div className="w-full space-y-3 flex-grow flex flex-col">
+                        <div className="flex justify-center gap-1.5 flex-wrap">
+                          {c.tag && (
+                            <Badge className={`${getTagBadge(c.tag).className} gap-1 rounded-full border shadow-none font-bold text-[10px] uppercase`}>
+                              {getTagBadge(c.tag).icon}
+                              {c.tag}
+                            </Badge>
+                          )}
+                          <Badge variant="secondary" className="rounded-full font-bold text-[10px] uppercase tracking-wider text-slate-500 bg-slate-100 border-none">
+                            Online
                           </Badge>
-                        )}
-                        <Badge variant="secondary" className="rounded-full font-bold text-[10px] uppercase tracking-wider text-slate-500 bg-slate-100 border-none">
-                          Online
-                        </Badge>
-                      </div>
+                        </div>
 
-                      <h3 className="font-sans font-extrabold text-[#1e1b4b] text-base leading-snug min-h-[2.8rem] line-clamp-2 transition-colors group-hover:text-[#6b21a8]">
-                        {c.title}
-                      </h3>
+                        <h3 className="font-sans font-extrabold text-[#1e1b4b] text-base leading-snug min-h-[2.8rem] line-clamp-2 transition-colors group-hover:text-[#6b21a8]">
+                          {c.title}
+                        </h3>
 
-                      {/* Course Metadata Stats */}
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-400 pt-1">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
-                          {Math.max(50, c.enrolledCount || 0).toLocaleString()} Learners
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {c.durationHours || 0} hrs
-                        </span>
-                      </div>
-
-                      {/* Action trigger footer */}
-                      <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto w-full relative z-20 gap-3">
-                        <div className="text-left shrink-0">
-                          <span className="block text-[9px] uppercase font-bold text-slate-400 tracking-wider">Price</span>
-                          <span className="text-lg font-extrabold text-[#6b21a8]">
-                            ₹{(c.price || 499).toLocaleString()}
+                        {/* Course Metadata Stats */}
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-400 pt-1">
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" />
+                            {Math.max(50, c.enrolledCount || 0).toLocaleString()} Learners
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
+                            {c.durationHours || 0} hrs
                           </span>
                         </div>
-                        
-                        <Button
-                          asChild
-                          size="sm"
-                          className="rounded-full bg-[#6b21a8] text-white hover:bg-[#581c87] shadow-md shadow-purple-600/10 font-bold px-4 py-2.5 text-xs transition-transform hover:-translate-y-0.5"
-                        >
-                          <Link 
-                            to={c.slug ? `/checkout/${c.slug}` : "/courses"}
-                            onClick={() => {
-                              if (c.slug) {
-                                trackMetaEvent("AddToCart", {
-                                  content_name: c.title,
-                                  content_category: c.category,
-                                  content_ids: [c.key],
-                                  content_type: "product",
-                                  value: c.price || 499,
-                                  currency: "INR",
-                                });
-                              }
-                            }}
+
+                        {/* Action trigger footer */}
+                        <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto w-full relative z-20 gap-3">
+                          <div className="text-left shrink-0">
+                            <span className="block text-[9px] uppercase font-bold text-slate-400 tracking-wider">Price</span>
+                            <span className="text-lg font-extrabold text-[#6b21a8]">
+                              ₹{(c.price || 499).toLocaleString()}
+                            </span>
+                          </div>
+                          
+                          <Button
+                            asChild
+                            size="sm"
+                            className="rounded-full bg-[#6b21a8] text-white hover:bg-[#581c87] shadow-md shadow-purple-600/10 font-bold px-4 py-2.5 text-xs transition-transform hover:-translate-y-0.5"
                           >
-                            Add to Cart
-                          </Link>
-                        </Button>
+                            <Link 
+                              to={c.slug ? `/checkout/${c.slug}` : "/courses"}
+                              onClick={() => {
+                                if (c.slug) {
+                                  trackMetaEvent("AddToCart", {
+                                    content_name: c.title,
+                                    content_category: c.category,
+                                    content_ids: [c.key],
+                                    content_type: "product",
+                                    value: c.price || 499,
+                                    currency: "INR",
+                                  });
+                                }
+                              }}
+                            >
+                              Add to Cart
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                </Reveal>
-              );
-            })}
+                    </article>
+                  </Reveal>
+                );
+              })}
+          </div>
+
+          {/* Right Arrow Button */}
+          <button
+            onClick={() => scroll("right")}
+            className="absolute -right-5 top-1/2 -translate-y-1/2 z-30 h-10 w-10 rounded-full border border-slate-200 bg-white shadow-md flex items-center justify-center text-slate-600 hover:text-[#6b21a8] hover:border-purple-300 hover:scale-105 active:scale-95 transition-all opacity-0 group-hover/slider:opacity-100 hidden md:flex cursor-pointer"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
         </div>
       </div>
     </section>
