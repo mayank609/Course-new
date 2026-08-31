@@ -1,7 +1,22 @@
 import { Award, CheckCircle, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
+import { useEffect, useState } from "react";
+
+const CERTIFICATES = [
+  { src: "/certificate-excel.webp", alt: "AI-Powered Excel Mastery Program certificate of completion" },
+  { src: "/certificate-office.webp", alt: "AI-Powered Office Productivity Mastery Program certificate of completion" },
+];
 
 export function CertificateStats() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % CERTIFICATES.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section className="px-4 py-16 sm:py-20 bg-white border-t border-slate-100 overflow-hidden">
       <div className="mx-auto max-w-7xl">
@@ -42,17 +57,36 @@ export function CertificateStats() {
             </div>
           </Reveal>
 
-          {/* Right Column - Certificate mockup */}
+          {/* Right Column - Certificate slideshow */}
           <Reveal delay={100} className="relative flex justify-center">
             <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/10 to-indigo-600/5 rounded-3xl filter blur-3xl -z-10 transform scale-95" />
 
             <div className="relative group max-w-lg w-full rounded-[32px] overflow-hidden shadow-xl border border-slate-100 bg-white p-4 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl">
-              <div className="rounded-2xl overflow-hidden border border-slate-100/50">
-                <img
-                  src="/Cert1.webp"
-                  alt="Sarvpratham Analytics Certificate of Completion"
-                  className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.01]"
-                />
+              <div className="relative aspect-[7/5] rounded-2xl overflow-hidden border border-slate-100/50 bg-slate-50">
+                {CERTIFICATES.map((cert, i) => (
+                  <img
+                    key={cert.src}
+                    src={cert.src}
+                    alt={cert.alt}
+                    className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-700 ${
+                      i === activeIndex ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <div className="flex items-center justify-center gap-2 pt-4">
+                {CERTIFICATES.map((cert, i) => (
+                  <button
+                    key={cert.src}
+                    type="button"
+                    onClick={() => setActiveIndex(i)}
+                    aria-label={`Show certificate ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i === activeIndex ? "w-6 bg-purple-600" : "w-1.5 bg-slate-200"
+                    }`}
+                  />
+                ))}
               </div>
             </div>
           </Reveal>
