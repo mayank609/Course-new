@@ -9,6 +9,9 @@ import { trackMetaEvent } from "@/components/site/MetaPixel";
 
 const searchSchema = z.object({
   course: z.string().optional().catch(""),
+  amount: z.number().optional().catch(undefined),
+  currency: z.string().optional().catch("INR"),
+  orderId: z.string().optional().catch(""),
 });
 
 export const Route = createFileRoute("/thank-you")({
@@ -17,19 +20,21 @@ export const Route = createFileRoute("/thank-you")({
 });
 
 function ThankYouPage() {
-  const { course } = Route.useSearch();
+  const { course, amount, currency, orderId } = Route.useSearch();
 
   useEffect(() => {
     // Track Purchase and CompleteRegistration events
     trackMetaEvent("Purchase", {
       content_name: course || "Course Purchase",
       content_type: "product",
-      currency: "INR",
+      value: amount ?? 0,
+      currency: currency || "INR",
+      order_id: orderId || undefined,
     });
     trackMetaEvent("CompleteRegistration", {
       content_name: course || "Course Registration",
     });
-  }, [course]);
+  }, [course, amount, currency, orderId]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

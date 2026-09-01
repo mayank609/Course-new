@@ -537,6 +537,9 @@ const body = await readJson(request);
 
       let updatedSome = false;
       let courseTitle = "";
+      let totalAmount = 0;
+      let currency = "INR";
+      const courseSlugs: string[] = [];
 
       for (const purchase of pendingPurchases) {
         purchase.status = "completed";
@@ -545,6 +548,10 @@ const body = await readJson(request);
         if (!student.purchasedCourses.includes(purchase.courseSlug)) {
           student.purchasedCourses.push(purchase.courseSlug);
         }
+
+        totalAmount += purchase.amount || 0;
+        currency = purchase.currency || currency;
+        courseSlugs.push(purchase.courseSlug);
 
         const course = await Course.findOne({ slug: purchase.courseSlug });
         if (course) {
@@ -569,10 +576,20 @@ const body = await readJson(request);
         if (anyPurchases.length > 0) {
           const mainCourse = await Course.findOne({ slug: anyPurchases[0].courseSlug });
           if (mainCourse) courseTitle = mainCourse.title;
+          totalAmount = anyPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+          currency = anyPurchases[0].currency || currency;
+          courseSlugs.push(...anyPurchases.map((p) => p.courseSlug));
         }
       }
 
-      return json({ ok: true, courseTitle: courseTitle || "Course" });
+      return json({
+        ok: true,
+        courseTitle: courseTitle || "Course",
+        amount: totalAmount,
+        currency,
+        orderId,
+        courseSlugs,
+      });
     } else {
       return json({ ok: false, status: cfData.order_status, error: "Payment not completed or failed" });
     }

@@ -50,7 +50,12 @@ function CheckoutCallbackPage() {
             if (isMounted) {
               navigate({
                 to: "/thank-you",
-                search: { course: data.courseTitle || "Course" },
+                search: {
+                  course: data.courseTitle || "Course",
+                  amount: typeof data.amount === "number" ? data.amount : undefined,
+                  currency: data.currency || "INR",
+                  orderId: data.orderId || order_id,
+                },
               });
             }
           }, 2000);
