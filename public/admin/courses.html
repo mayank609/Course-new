@@ -81,6 +81,8 @@
       <div>
         <label>Image URL</label>
         <input name="imageUrl" placeholder="https://..." />
+        <input type="file" id="course-image-file" accept="image/*" style="margin-top:6px;font-size:0.78rem" />
+        <div class="muted" id="course-image-status" style="font-size:0.75rem;margin-top:4px"></div>
       </div>
       <div>
         <label>Syllabus PDF URL</label>
@@ -283,6 +285,14 @@
     document.getElementById("overlay").classList.remove("open");
     editingId = null;
   }
+
+  wireImageUpload({
+    fileInputId: "course-image-file",
+    statusId: "course-image-status",
+    urlFieldName: "imageUrl",
+    form: document.getElementById("course-form"),
+    folder: "skillup-hub/courses",
+  });
 
   document.getElementById("new-course").addEventListener("click", () => openModal(null));
   document.getElementById("cancel-btn").addEventListener("click", closeModal);

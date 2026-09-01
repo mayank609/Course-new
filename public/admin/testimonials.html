@@ -56,6 +56,8 @@
       <div class="full">
         <label>Avatar / Photo URL</label>
         <input name="avatarUrl" placeholder="https://... /photo.jpg" />
+        <input type="file" id="testimonial-avatar-file" accept="image/*" style="margin-top:6px;font-size:0.78rem" />
+        <div class="muted" id="testimonial-avatar-status" style="font-size:0.75rem;margin-top:4px"></div>
       </div>
       <div class="full">
         <label>Video Testimonial URL (Optional)</label>
@@ -155,6 +157,14 @@
     document.getElementById("overlay").classList.remove("open");
     editingId = null;
   }
+
+  wireImageUpload({
+    fileInputId: "testimonial-avatar-file",
+    statusId: "testimonial-avatar-status",
+    urlFieldName: "avatarUrl",
+    form: document.getElementById("testimonial-form"),
+    folder: "skillup-hub/testimonials",
+  });
 
   document.getElementById("new-testimonial").addEventListener("click", () => openModal(null));
   document.getElementById("cancel-btn").addEventListener("click", closeModal);

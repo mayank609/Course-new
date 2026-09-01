@@ -10,6 +10,7 @@ import { Purchase } from "./models/Purchase";
 import { Testimonial } from "./models/Testimonial";
 import { sendPasswordResetEmail } from "./mail";
 import { sendWhatsAppPurchaseNotification } from "./whatsapp";
+import { uploadImageToCloudinary } from "./cloudinary";
 import {
   adminCookieHeader,
   clearAdminCookieHeader,
@@ -550,6 +551,22 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
 
   if (method === "GET" && path === "/me") {
     return json({ email: session.email });
+  }
+
+  if (method === "POST" && path === "/upload-image") {
+    try {
+      const formData = await request.formData();
+      const file = formData.get("file");
+      if (!(file instanceof Blob)) {
+        return json({ error: "No file provided" }, { status: 400 });
+      }
+      const folderField = formData.get("folder");
+      const folder = typeof folderField === "string" && folderField.trim() ? folderField.trim() : "skillup-hub";
+      const url = await uploadImageToCloudinary(file, folder);
+      return json({ url });
+    } catch (err) {
+      return json({ error: err instanceof Error ? err.message : "Upload failed" }, { status: 500 });
+    }
   }
 
   if (method === "GET" && path === "/stats") {

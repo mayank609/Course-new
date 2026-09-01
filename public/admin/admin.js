@@ -13,6 +13,46 @@ async function api(path, opts = {}) {
   return data;
 }
 
+async function uploadImage(file, folder = "skillup-hub") {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("folder", folder);
+  const res = await fetch("/api/admin/upload-image", {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+  if (res.status === 401) {
+    window.location.href = "/admin/login.html";
+    throw new Error("Not authenticated");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Upload failed");
+  return data.url;
+}
+
+function wireImageUpload({ fileInputId, statusId, urlFieldName, form, folder }) {
+  const fileInput = document.getElementById(fileInputId);
+  const statusEl = document.getElementById(statusId);
+  if (!fileInput) return;
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    statusEl.textContent = "Uploading…";
+    statusEl.style.color = "";
+    try {
+      const url = await uploadImage(file, folder);
+      form.elements[urlFieldName].value = url;
+      statusEl.textContent = "Uploaded ✓";
+    } catch (err) {
+      statusEl.textContent = `Upload failed: ${err.message}`;
+      statusEl.style.color = "#dc2626";
+    } finally {
+      fileInput.value = "";
+    }
+  });
+}
+
 async function requireAuth() {
   try {
     return await api("/me");
