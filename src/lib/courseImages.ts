@@ -1,3 +1,4 @@
+import { toDirectImageUrl } from "@/lib/imageUrl";
 import agileManagement from "@/assets/courses/agile-management.svg";
 import projectManagement from "@/assets/courses/project-management.svg";
 import productManagement from "@/assets/courses/product-management.svg";
@@ -17,6 +18,6 @@ const CATEGORY_IMAGES: Record<string, string> = {
 };
 
 export function getCourseImage(category: string, imageUrl?: string): string {
-  if (imageUrl) return imageUrl;
+  if (imageUrl) return toDirectImageUrl(imageUrl);
   return CATEGORY_IMAGES[category] ?? agileManagement;
 }

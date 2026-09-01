@@ -10,9 +10,10 @@ import { fetchCourses, fetchCategories } from "@/lib/api";
 import { sampleCourses } from "@/lib/sampleCourses";
 import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
+import { toDirectImageUrl } from "@/lib/imageUrl";
 
 function getCourse3DIcon(title: string, imageUrl?: string) {
-  let iconSrc = imageUrl;
+  let iconSrc = toDirectImageUrl(imageUrl);
   
   if (!iconSrc) {
     const t = title.toLowerCase();

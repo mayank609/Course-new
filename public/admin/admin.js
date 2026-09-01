@@ -72,6 +72,22 @@ async function wireLogout() {
   });
 }
 
+const DRIVE_ID_PATTERNS = [
+  /drive\.google\.com\/file\/d\/([^/]+)/,
+  /drive\.google\.com\/open\?id=([^&]+)/,
+  /drive\.google\.com\/uc\?(?:export=\w+&)?id=([^&]+)/,
+  /docs\.google\.com\/uc\?(?:export=\w+&)?id=([^&]+)/,
+];
+
+function toDirectImageUrl(url) {
+  if (!url) return url;
+  for (const pattern of DRIVE_ID_PATTERNS) {
+    const match = url.match(pattern);
+    if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1600`;
+  }
+  return url;
+}
+
 function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }

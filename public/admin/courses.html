@@ -161,7 +161,7 @@
   }
 
   function getCourseImage(slug, imageUrl) {
-    if (imageUrl && imageUrl.trim()) return imageUrl;
+    if (imageUrl && imageUrl.trim()) return toDirectImageUrl(imageUrl.trim());
     const s = String(slug || "").toLowerCase();
     if (s.includes("excel")) return "/ExcelCard.webp";
     if (s.includes("word") || s.includes("powerpoint") || s.includes("ppt")) return "/OfficeCard.webp";

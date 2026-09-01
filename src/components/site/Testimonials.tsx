@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Reveal } from "@/components/site/Reveal";
+import { toDirectImageUrl } from "@/lib/imageUrl";
 
 type TestimonialItem = {
   _id?: string;
@@ -96,7 +97,7 @@ export function Testimonials() {
               <div className="mt-6 border-t border-slate-50 pt-4 flex items-center gap-3">
                 {t.avatarUrl ? (
                   <img
-                    src={t.avatarUrl}
+                    src={toDirectImageUrl(t.avatarUrl)}
                     alt={t.name}
                     className="h-9 w-9 rounded-full object-cover border border-slate-100"
                   />

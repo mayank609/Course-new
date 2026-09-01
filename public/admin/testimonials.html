@@ -100,7 +100,7 @@
           ${testimonials.map((t) => `
             <tr data-id="${t._id}">
               <td style="display:flex;align-items:center;gap:10px">
-                ${t.avatarUrl ? `<img src="${escapeHtml(t.avatarUrl)}" style="width:32px;height:32px;border-radius:50%;object-cover:true;" />` : `<div style="width:32px;height:32px;border-radius:50%;background:#e8c477;color:#fff;display:grid;place-items:center;font-weight:bold;">${escapeHtml(t.name[0])}</div>`}
+                ${t.avatarUrl ? `<img src="${escapeHtml(toDirectImageUrl(t.avatarUrl))}" style="width:32px;height:32px;border-radius:50%;object-cover:true;" />` : `<div style="width:32px;height:32px;border-radius:50%;background:#e8c477;color:#fff;display:grid;place-items:center;font-weight:bold;">${escapeHtml(t.name[0])}</div>`}
                 <span>${escapeHtml(t.name)}</span>
               </td>
               <td>${escapeHtml(t.role)} ${t.company ? `at ${escapeHtml(t.company)}` : ''}</td>
