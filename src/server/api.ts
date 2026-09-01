@@ -8,7 +8,7 @@ import { Lead, LEAD_SOURCE_VALUES } from "./models/Lead";
 import { Student } from "./models/Student";
 import { Purchase } from "./models/Purchase";
 import { Testimonial } from "./models/Testimonial";
-import { sendPasswordResetEmail } from "./mail";
+import { sendPasswordResetEmail, sendRegistrationOtpEmail } from "./mail";
 import { sendWhatsAppPurchaseNotification } from "./whatsapp";
 import { uploadImageToCloudinary } from "./cloudinary";
 import {
@@ -23,6 +23,11 @@ import {
 } from "./auth";
 
 const PASSWORD_RESET_PURPOSE = "password_reset";
+const REGISTER_OTP_PURPOSE = "register_otp";
+
+function generateOtp(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
 
 function json(data: unknown, init: ResponseInit = {}): Response {
   const headers = new Headers(init.headers);
@@ -125,12 +130,63 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     if (existing) {
       return json({ error: "An account with this email already exists" }, { status: 409 });
     }
+
+    const otp = generateOtp();
+    const otpToken = jwt.sign(
+      { purpose: REGISTER_OTP_PURPOSE, name, email: normalizedEmail, phone, otp },
+      process.env.JWT_SECRET!,
+      { expiresIn: "10m" }
+    );
+
+    if (!process.env.BREVO_API_KEY) {
+      console.log(`[register] BREVO_API_KEY not set — OTP for ${normalizedEmail}: ${otp}`);
+    }
+    try {
+      await sendRegistrationOtpEmail(normalizedEmail, name, otp);
+    } catch (err) {
+      console.error("[register] failed to send OTP email:", err);
+      return json({ error: "Failed to send verification email. Please try again." }, { status: 500 });
+    }
+
+    return json({ token: otpToken, email: normalizedEmail });
+  }
+
+  if (method === "POST" && path === "/student/register/verify") {
+    const body = await readJson(request);
+    const { token, otp, password } = body as { token?: string; otp?: string; password?: string };
+    if (!token || !otp || !password) {
+      return json({ error: "Token, code and password are required" }, { status: 400 });
+    }
+
+    let payload: { purpose: string; name: string; email: string; phone?: string; otp: string };
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!) as typeof payload;
+    } catch {
+      return json({ error: "This verification code has expired. Please sign up again." }, { status: 400 });
+    }
+    if (payload.purpose !== REGISTER_OTP_PURPOSE) {
+      return json({ error: "Invalid verification token" }, { status: 400 });
+    }
+    if (payload.otp !== otp.trim()) {
+      return json({ error: "Incorrect verification code" }, { status: 400 });
+    }
+
+    const existing = await Student.findOne({ email: payload.email });
+    if (existing) {
+      return json({ error: "An account with this email already exists" }, { status: 409 });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
-    const student = await Student.create({ name, email: normalizedEmail, passwordHash, phone });
-    const token = signStudentSession({ id: String(student._id), email: student.email, name: student.name });
+    const student = await Student.create({
+      name: payload.name,
+      email: payload.email,
+      passwordHash,
+      phone: payload.phone,
+    });
+    const sessionToken = signStudentSession({ id: String(student._id), email: student.email, name: student.name });
     return jsonWithCookie(
       { id: student._id, email: student.email, name: student.name },
-      studentCookieHeader(token)
+      studentCookieHeader(sessionToken)
     );
   }
 

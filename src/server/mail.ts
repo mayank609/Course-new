@@ -48,6 +48,27 @@ function emailShell(title: string, bodyHtml: string): string {
   `;
 }
 
+export function sendRegistrationOtpEmail(to: string, name: string, otp: string): Promise<void> {
+  return sendEmail({
+    to,
+    toName: name,
+    subject: `${otp} is your Sarvpratham Analytics verification code`,
+    html: emailShell(
+      "Verify your email",
+      `
+        <p>Hi ${name},</p>
+        <p>Use the code below to verify your email and finish creating your account. This code expires in 10 minutes.</p>
+        <p style="margin: 24px 0; text-align: center;">
+          <span style="display: inline-block; background: #f1f1f4; color: #1a1a2e; padding: 14px 28px; border-radius: 12px; font-size: 28px; font-weight: bold; letter-spacing: 6px;">
+            ${otp}
+          </span>
+        </p>
+        <p>If you didn't try to create an account, you can safely ignore this email.</p>
+      `
+    ),
+  });
+}
+
 export function sendPasswordResetEmail(to: string, name: string, resetUrl: string): Promise<void> {
   return sendEmail({
     to,

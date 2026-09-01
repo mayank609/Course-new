@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -90,9 +90,8 @@ function ResetPasswordPage() {
                 <label className="text-xs font-semibold text-muted-foreground" htmlFor="password">
                   New Password
                 </label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   placeholder="••••••••"
                   {...register("password")}
                   className="rounded-xl"
@@ -106,9 +105,8 @@ function ResetPasswordPage() {
                 <label className="text-xs font-semibold text-muted-foreground" htmlFor="confirmPassword">
                   Confirm New Password
                 </label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   placeholder="••••••••"
                   {...register("confirmPassword")}
                   className="rounded-xl"
