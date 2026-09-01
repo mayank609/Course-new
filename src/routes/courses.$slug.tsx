@@ -124,7 +124,7 @@ function CourseDetailPage() {
                   <img
                     src={getCourseImage(course.category, course.imageUrl)}
                     alt={course.title}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover object-top"
                   />
                 </div>
                 <div className="mt-6 flex items-center gap-2">

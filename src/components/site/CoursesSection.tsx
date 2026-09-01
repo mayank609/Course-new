@@ -29,7 +29,7 @@ function getCourseCardMedia(title: string, imageUrl?: string) {
         <img
           src={customImage}
           alt={title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
         />
       </div>
     );

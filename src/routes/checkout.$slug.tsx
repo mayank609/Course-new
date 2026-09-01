@@ -237,7 +237,7 @@ function CheckoutPage() {
                     <img
                       src={getCourseImage(course.category, course.imageUrl)}
                       alt={course.title}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover object-top"
                     />
                   </div>
                   <div className="space-y-1">
@@ -275,7 +275,7 @@ function CheckoutPage() {
                               <img
                                 src={getCourseImage(rec.category, rec.imageUrl)}
                                 alt={rec.title}
-                                className="h-full w-full object-cover"
+                                className="h-full w-full object-cover object-top"
                               />
                             </div>
                             <div className="min-w-0 flex-1">

@@ -194,7 +194,7 @@ function CoursesPage() {
                       <img
                         src={getCourseImage(c.category, c.imageUrl)}
                         alt={c.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
                       />
                     </div>
                     <div className="p-5">
