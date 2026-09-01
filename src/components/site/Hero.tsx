@@ -1,8 +1,11 @@
-import { Sparkles, Star, Play, Award, ShieldCheck } from "lucide-react";
+import { Sparkles, Star, Play, Award, ShieldCheck, Tag, Copy, Check } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/site/Reveal";
 import { useState, useEffect } from "react";
+import { fetchActiveCoupons } from "@/lib/api";
+import { toast } from "sonner";
 
 const companies = [
   { name: "MIQ", logo: "/logos/miq.png" },
@@ -29,6 +32,27 @@ export function Hero() {
     }, 6000);
     return () => clearInterval(timer);
   }, []);
+
+  const { data: coupons } = useQuery({
+    queryKey: ["active-coupons"],
+    queryFn: fetchActiveCoupons,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  function handleCopyCoupon(code: string) {
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        setCopiedCode(code);
+        toast.success(`Coupon "${code}" copied!`);
+        setTimeout(() => setCopiedCode((prev) => (prev === code ? null : prev)), 2000);
+      })
+      .catch(() => {
+        toast.error("Couldn't copy the code — please copy it manually.");
+      });
+  }
 
   return (
     <section className="w-full bg-[#f8fafc] py-12 sm:py-16 lg:py-20 relative overflow-hidden border-b border-border/30">
@@ -89,6 +113,29 @@ export function Hero() {
                 ))}
               </div>
             </Reveal>
+
+            {/* Active Coupon Codes */}
+            {coupons && coupons.length > 0 && (
+              <Reveal delay={0.27} className="flex flex-wrap items-center gap-2 pt-1">
+                {coupons.map((c) => (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => handleCopyCoupon(c.code)}
+                    className="group inline-flex items-center gap-2 rounded-full border border-dashed border-purple-300 bg-purple-50 hover:bg-purple-100 pl-3 pr-1.5 py-1.5 transition-colors"
+                  >
+                    <Tag className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                    <span className="text-xs font-extrabold text-purple-800 tracking-wide">{c.code}</span>
+                    <span className="text-[10px] font-bold text-purple-500 uppercase whitespace-nowrap">
+                      {c.discountType === "percentage" ? `${c.discountValue}% OFF` : `₹${c.discountValue} OFF`}
+                    </span>
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-purple-600 shrink-0 transition-transform group-hover:scale-110">
+                      {copiedCode === c.code ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    </span>
+                  </button>
+                ))}
+              </Reveal>
+            )}
 
             {/* CTA Buttons */}
             <Reveal delay={0.3} className="flex flex-wrap items-center gap-4 pt-2">

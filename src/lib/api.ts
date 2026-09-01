@@ -84,3 +84,15 @@ export type Category = {
 export function fetchCategories() {
   return request<Category[]>("/api/categories");
 }
+
+export type ActiveCoupon = {
+  code: string;
+  discountType: "percentage" | "flat";
+  discountValue: number;
+  minOrderAmount: number;
+  expiresAt: string | null;
+};
+
+export function fetchActiveCoupons() {
+  return request<ActiveCoupon[]>("/api/coupons/active");
+}

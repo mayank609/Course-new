@@ -276,6 +276,26 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     return json(categories);
   }
 
+  if (method === "GET" && path === "/coupons/active") {
+    const now = new Date();
+    const coupons = await Coupon.find({
+      active: true,
+      $or: [{ expiresAt: null }, { expiresAt: { $gte: now } }],
+    }).sort({ createdAt: -1 });
+
+    const usable = coupons.filter((c) => c.maxUses == null || c.usedCount < c.maxUses);
+
+    return json(
+      usable.map((c) => ({
+        code: c.code,
+        discountType: c.discountType,
+        discountValue: c.discountValue,
+        minOrderAmount: c.minOrderAmount,
+        expiresAt: c.expiresAt,
+      }))
+    );
+  }
+
   if (method === "GET" && path === "/student/me") {
     const session = getStudentSession(request);
     if (!session) return json({ error: "Not authenticated" }, { status: 401 });
