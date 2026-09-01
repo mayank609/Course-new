@@ -12,24 +12,34 @@ import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
 import { toDirectImageUrl } from "@/lib/imageUrl";
 
-function getCourse3DIcon(title: string, imageUrl?: string) {
-  let iconSrc = toDirectImageUrl(imageUrl);
-  
-  if (!iconSrc) {
-    const t = title.toLowerCase();
-    iconSrc = "/ai-3d-icon.jpg";
-    if (t.includes("excel")) {
-      iconSrc = "/excel-3d-icon.jpg";
-    } else if (t.includes("word") || t.includes("document")) {
-      iconSrc = "/word-3d-icon.jpg";
-    } else if (t.includes("powerpoint") || t.includes("ppt") || t.includes("presentation")) {
-      iconSrc = "/powerpoint-3d-icon.jpg";
-    }
+function getDefaultCourseIcon(title: string): string {
+  const t = title.toLowerCase();
+  if (t.includes("excel")) return "/excel-3d-icon.jpg";
+  if (t.includes("word") || t.includes("document")) return "/word-3d-icon.jpg";
+  if (t.includes("powerpoint") || t.includes("ppt") || t.includes("presentation")) return "/powerpoint-3d-icon.jpg";
+  return "/ai-3d-icon.jpg";
+}
+
+function getCourseCardMedia(title: string, imageUrl?: string) {
+  const customImage = toDirectImageUrl(imageUrl);
+
+  if (customImage) {
+    return (
+      <div className="w-full aspect-video overflow-hidden relative z-0">
+        <img
+          src={customImage}
+          alt={title}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      </div>
+    );
   }
 
   return (
-    <div className="relative group/icon h-24 w-24 rounded-3xl overflow-hidden shadow-lg border border-slate-100/50 bg-white transition-transform duration-300 group-hover:scale-105">
-      <img src={iconSrc} alt={title} className="w-full h-full object-cover" />
+    <div className="my-6 flex items-center justify-center relative z-20">
+      <div className="relative group/icon h-24 w-24 rounded-3xl overflow-hidden shadow-lg border border-slate-100/50 bg-white transition-transform duration-300 group-hover:scale-105">
+        <img src={getDefaultCourseIcon(title)} alt={title} className="w-full h-full object-cover" />
+      </div>
     </div>
   );
 }
@@ -196,11 +206,11 @@ export function CoursesSection() {
               ))}
             {!isLoading &&
               filtered.map((c, i) => {
-                const icon = getCourse3DIcon(c.title, c.imageUrl);
+                const media = getCourseCardMedia(c.title, c.imageUrl);
                 return (
                   <Reveal key={c.key} delay={(i % 4) * 90} className="shrink-0 snap-start w-[290px] sm:w-[325px] lg:w-[calc(25%-18px)] flex flex-col">
-                    <article className="relative group h-full overflow-hidden rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm hover:shadow-xl hover:border-purple-200/50 transition-all duration-300 flex flex-col items-center text-center">
-                      
+                    <article className="relative group h-full overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-sm hover:shadow-xl hover:border-purple-200/50 transition-all duration-300 flex flex-col items-center text-center">
+
                       {/* Floating redirect click zone */}
                       {c.slug ? (
                         <Link
@@ -217,12 +227,10 @@ export function CoursesSection() {
                         />
                       )}
 
-                      {/* Centered 3D course logo */}
-                      <div className="my-6 flex items-center justify-center relative z-20">
-                        {icon}
-                      </div>
+                      {/* Course thumbnail: full-width banner if a real image was uploaded, small 3D icon otherwise */}
+                      {media}
 
-                      <div className="w-full space-y-3 flex-grow flex flex-col">
+                      <div className="w-full space-y-3 flex-grow flex flex-col px-6 pb-6 pt-5">
                         <div className="flex justify-center gap-1.5 flex-wrap">
                           {c.tag && (
                             <Badge className={`${getTagBadge(c.tag).className} gap-1 rounded-full border shadow-none font-bold text-[10px] uppercase`}>
