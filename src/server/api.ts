@@ -8,9 +8,11 @@ import { Lead, LEAD_SOURCE_VALUES } from "./models/Lead";
 import { Student } from "./models/Student";
 import { Purchase } from "./models/Purchase";
 import { Testimonial } from "./models/Testimonial";
+import { Coupon } from "./models/Coupon";
 import { sendPasswordResetEmail, sendRegistrationOtpEmail } from "./mail";
 import { sendWhatsAppPurchaseNotification } from "./whatsapp";
 import { uploadImageToCloudinary } from "./cloudinary";
+import { validateCoupon } from "./coupons";
 import {
   adminCookieHeader,
   clearAdminCookieHeader,
@@ -369,17 +371,52 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     return json({ purchase, addonPurchases, ok: true }, { status: 201 });
   }
 
+  if (method === "POST" && path === "/coupons/apply") {
+    const session = getStudentSession(request);
+    if (!session) return json({ error: "Not authenticated" }, { status: 401 });
+
+    const body = await readJson(request);
+    const { code, courseSlug, addonSlugs } = body as { code?: string; courseSlug?: string; addonSlugs?: string[] };
+    if (!code || !code.trim()) return json({ error: "Coupon code is required" }, { status: 400 });
+    if (!courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
+
+    const course = await Course.findOne({ slug: courseSlug });
+    if (!course) return json({ error: "Course not found" }, { status: 404 });
+
+    const requestedAddonSlugs = (addonSlugs ?? []).filter((slug) => slug !== course.slug);
+    const addonCourses = requestedAddonSlugs.length
+      ? await Course.find({ slug: { $in: requestedAddonSlugs }, published: true })
+      : [];
+    const subtotal = course.price + addonCourses.reduce((sum, addon) => sum + addon.price, 0);
+
+    try {
+      const result = await validateCoupon(code, { courseSlug, subtotal });
+      return json({
+        valid: true,
+        code: result.coupon.code,
+        discountType: result.coupon.discountType,
+        discountValue: result.coupon.discountValue,
+        discountAmount: result.discountAmount,
+        finalAmount: result.finalAmount,
+        subtotal,
+      });
+    } catch (err) {
+      return json({ error: err instanceof Error ? err.message : "Invalid coupon" }, { status: 400 });
+    }
+  }
+
   if (method === "POST" && path === "/payment/create-order") {
     const session = getStudentSession(request);
     if (!session) return json({ error: "Not authenticated" }, { status: 401 });
 const body = await readJson(request);
-    const { courseSlug, addonSlugs, phone, state, city, pincode } = body as {
+    const { courseSlug, addonSlugs, phone, state, city, pincode, couponCode } = body as {
       courseSlug?: string;
       addonSlugs?: string[];
       phone?: string;
       state?: string;
       city?: string;
       pincode?: string;
+      couponCode?: string;
     };
     if (!courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
     if (!phone || !phone.trim() || !state || !state.trim() || !city || !city.trim() || !pincode || !pincode.trim()) {
@@ -404,7 +441,6 @@ const body = await readJson(request);
     }
 
     // Calculate total price
-    let amount = course.price;
     const requestedAddonSlugs = (addonSlugs ?? []).filter(
       (slug) => slug !== course.slug && !student.purchasedCourses.includes(slug)
     );
@@ -412,9 +448,37 @@ const body = await readJson(request);
       ? await Course.find({ slug: { $in: requestedAddonSlugs }, published: true })
       : [];
 
-    for (const addon of addonCourses) {
-      amount += addon.price;
+    const items = [
+      { slug: course.slug, title: course.title, currency: course.currency || "INR", amount: course.price },
+      ...addonCourses.map((addon) => ({ slug: addon.slug, title: addon.title, currency: addon.currency || "INR", amount: addon.price })),
+    ];
+    const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+
+    let amount = subtotal;
+    let appliedCouponCode = "";
+    let totalDiscount = 0;
+
+    if (couponCode && couponCode.trim()) {
+      try {
+        const result = await validateCoupon(couponCode, { courseSlug, subtotal });
+        amount = result.finalAmount;
+        totalDiscount = result.discountAmount;
+        appliedCouponCode = result.coupon.code;
+      } catch (err) {
+        return json({ error: err instanceof Error ? err.message : "Invalid coupon" }, { status: 400 });
+      }
     }
+
+    // Distribute the discount proportionally across each item so their amounts sum to the final charged total
+    let distributedSoFar = 0;
+    const itemsWithDiscount = items.map((item, idx) => {
+      const isLast = idx === items.length - 1;
+      const itemDiscount = isLast
+        ? totalDiscount - distributedSoFar
+        : Math.round((totalDiscount * item.amount) / subtotal);
+      distributedSoFar += itemDiscount;
+      return { ...item, discountAmount: itemDiscount, finalAmount: Math.max(item.amount - itemDiscount, 0) };
+    });
 
     // Generate unique order ID
     const orderId = "order_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -463,23 +527,7 @@ const body = await readJson(request);
     const paymentSessionId = cfData.payment_session_id;
 
     // Save temporary Purchase records in the database with status "pending"
-    await Purchase.create({
-      studentId: student._id,
-      studentName: student.name,
-      studentEmail: student.email,
-      studentPhone: phone || student.phone || "",
-      studentState: state || "",
-      studentCity: city || "",
-      studentPincode: pincode || "",
-      courseSlug: course.slug,
-      courseTitle: course.title,
-      amount: course.price,
-      currency: course.currency || "INR",
-      status: "pending",
-      paymentId: orderId,
-    });
-
-    for (const addon of addonCourses) {
+    for (const item of itemsWithDiscount) {
       await Purchase.create({
         studentId: student._id,
         studentName: student.name,
@@ -488,12 +536,14 @@ const body = await readJson(request);
         studentState: state || "",
         studentCity: city || "",
         studentPincode: pincode || "",
-        courseSlug: addon.slug,
-        courseTitle: addon.title,
-        amount: addon.price,
-        currency: addon.currency || "INR",
+        courseSlug: item.slug,
+        courseTitle: item.title,
+        amount: item.finalAmount,
+        currency: item.currency,
         status: "pending",
         paymentId: orderId,
+        couponCode: appliedCouponCode,
+        discountAmount: item.discountAmount,
       });
     }
 
@@ -540,6 +590,7 @@ const body = await readJson(request);
       let totalAmount = 0;
       let currency = "INR";
       const courseSlugs: string[] = [];
+      let usedCouponCode = "";
 
       for (const purchase of pendingPurchases) {
         purchase.status = "completed";
@@ -552,6 +603,7 @@ const body = await readJson(request);
         totalAmount += purchase.amount || 0;
         currency = purchase.currency || currency;
         courseSlugs.push(purchase.courseSlug);
+        if (purchase.couponCode) usedCouponCode = purchase.couponCode;
 
         const course = await Course.findOne({ slug: purchase.courseSlug });
         if (course) {
@@ -566,6 +618,9 @@ const body = await readJson(request);
 
       if (updatedSome) {
         await student.save();
+        if (usedCouponCode) {
+          await Coupon.updateOne({ code: usedCouponCode }, { $inc: { usedCount: 1 } });
+        }
         if (student.phone && courseTitle) {
           sendWhatsAppPurchaseNotification(student.name, student.phone, courseTitle, orderId, "PAID").catch((err) => {
             console.error("Error triggering Cashfree WhatsApp notification:", err);
@@ -874,6 +929,54 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   if (method === "DELETE" && testimonialIdMatch) {
     const item = await Testimonial.findByIdAndDelete(testimonialIdMatch[1]);
     if (!item) return json({ error: "Testimonial not found" }, { status: 404 });
+    return json({ ok: true });
+  }
+
+  // --- Coupons CRUD ---
+
+  if (method === "GET" && path === "/coupons") {
+    const list = await Coupon.find().sort({ createdAt: -1 });
+    return json(list);
+  }
+
+  if (method === "POST" && path === "/coupons") {
+    const body = (await readJson(request)) as Record<string, unknown>;
+    if (!body.code || !body.discountType || body.discountValue == null) {
+      return json({ error: "code, discountType and discountValue are required" }, { status: 400 });
+    }
+    try {
+      const item = await Coupon.create({ ...body, code: String(body.code).trim().toUpperCase() });
+      return json(item, { status: 201 });
+    } catch (err: any) {
+      if (err?.code === 11000) {
+        return json({ error: "A coupon with this code already exists" }, { status: 409 });
+      }
+      throw err;
+    }
+  }
+
+  const couponIdMatch = path.match(/^\/coupons\/([^/]+)$/);
+  if (method === "PUT" && couponIdMatch) {
+    const body = (await readJson(request)) as Record<string, unknown>;
+    if (body.code) body.code = String(body.code).trim().toUpperCase();
+    try {
+      const item = await Coupon.findByIdAndUpdate(couponIdMatch[1], body, {
+        new: true,
+        runValidators: true,
+      });
+      if (!item) return json({ error: "Coupon not found" }, { status: 404 });
+      return json(item);
+    } catch (err: any) {
+      if (err?.code === 11000) {
+        return json({ error: "A coupon with this code already exists" }, { status: 409 });
+      }
+      throw err;
+    }
+  }
+
+  if (method === "DELETE" && couponIdMatch) {
+    const item = await Coupon.findByIdAndDelete(couponIdMatch[1]);
+    if (!item) return json({ error: "Coupon not found" }, { status: 404 });
     return json({ ok: true });
   }
 

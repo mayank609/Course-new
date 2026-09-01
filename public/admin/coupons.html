@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Coupons — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html">Dashboard</a>
+    <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/students.html">Students</a>
+    <a href="/admin/courses.html">Courses</a>
+    <a href="/admin/categories.html">Categories</a>
+    <a href="/admin/coupons.html" class="active">Coupons</a>
+    <a href="/admin/testimonials.html">Testimonials</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main">
+    <h1>Coupons</h1>
+    <p class="subtitle">Discount codes students can apply at checkout</p>
+    <div class="toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <button class="btn-gold" id="new-coupon">+ New Coupon</button>
+      <button id="btn-export" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Export CSV</button>
+    </div>
+    <div id="table-wrap"></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <form class="modal" id="coupon-form" style="width: 480px">
+    <h2 id="modal-title">New coupon</h2>
+    <div class="form-grid">
+      <div class="full">
+        <label>Coupon Code</label>
+        <input name="code" required placeholder="e.g. WELCOME20" style="text-transform:uppercase" />
+      </div>
+      <div>
+        <label>Discount Type</label>
+        <select name="discountType" required>
+          <option value="percentage">Percentage (%)</option>
+          <option value="flat">Flat amount (₹)</option>
+        </select>
+      </div>
+      <div>
+        <label>Discount Value</label>
+        <input name="discountValue" type="number" min="0" step="0.01" required placeholder="e.g. 20" />
+      </div>
+      <div>
+        <label>Minimum Order Amount (₹)</label>
+        <input name="minOrderAmount" type="number" min="0" step="0.01" placeholder="0" />
+      </div>
+      <div>
+        <label>Max Uses (blank = unlimited)</label>
+        <input name="maxUses" type="number" min="1" placeholder="Unlimited" />
+      </div>
+      <div class="full">
+        <label>Expiry Date (blank = never expires)</label>
+        <input name="expiresAt" type="date" />
+      </div>
+      <div class="full">
+        <label>Applicable Courses (leave empty for all courses — hold Ctrl/Cmd to pick multiple)</label>
+        <select name="applicableCourseSlugs" id="applicable-courses-select" multiple size="6"></select>
+      </div>
+      <div class="full checkbox-row">
+        <input type="checkbox" name="active" id="active" checked />
+        <label for="active" style="margin:0">Active</label>
+      </div>
+    </div>
+    <div class="error-msg" id="form-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="cancel-btn">Cancel</button>
+      <button type="submit" class="btn-primary">Save coupon</button>
+    </div>
+  </form>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let coupons = [];
+  let courses = [];
+  let editingId = null;
+
+  function populateCourseSelect(selectedSlugs) {
+    const select = document.getElementById("applicable-courses-select");
+    select.innerHTML = courses
+      .map((c) => `<option value="${escapeHtml(c.slug)}">${escapeHtml(c.title)}</option>`)
+      .join("");
+    const selected = new Set(selectedSlugs || []);
+    Array.from(select.options).forEach((opt) => {
+      opt.selected = selected.has(opt.value);
+    });
+  }
+
+  function couponStatus(c) {
+    if (!c.active) return { label: "Inactive", cls: "badge-closed" };
+    if (c.expiresAt && new Date(c.expiresAt) < new Date()) return { label: "Expired", cls: "badge-closed" };
+    if (c.maxUses != null && c.usedCount >= c.maxUses) return { label: "Limit reached", cls: "badge-closed" };
+    return { label: "Active", cls: "badge-contacted" };
+  }
+
+  function render() {
+    const wrap = document.getElementById("table-wrap");
+    if (coupons.length === 0) {
+      wrap.innerHTML = `<div class="empty">No coupons yet. Create the first one.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Code</th><th>Discount</th><th>Uses</th><th>Expires</th><th>Applies To</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${coupons.map((c) => {
+            const status = couponStatus(c);
+            const discountLabel = c.discountType === "percentage" ? `${c.discountValue}%` : `₹${c.discountValue}`;
+            const usesLabel = c.maxUses != null ? `${c.usedCount} / ${c.maxUses}` : `${c.usedCount} / ∞`;
+            const expiresLabel = c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : "Never";
+            const appliesLabel = c.applicableCourseSlugs && c.applicableCourseSlugs.length
+              ? `${c.applicableCourseSlugs.length} course(s)`
+              : "All courses";
+            return `
+              <tr data-id="${c._id}">
+                <td><code style="font-weight:bold">${escapeHtml(c.code)}</code></td>
+                <td>${escapeHtml(discountLabel)}</td>
+                <td>${escapeHtml(usesLabel)}</td>
+                <td>${escapeHtml(expiresLabel)}</td>
+                <td>${escapeHtml(appliesLabel)}</td>
+                <td><span class="badge ${status.cls}">${status.label}</span></td>
+                <td style="white-space:nowrap">
+                  <button class="btn-ghost btn-sm" data-edit="${c._id}">Edit</button>
+                  <button class="btn-danger btn-sm" data-delete="${c._id}">Delete</button>
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    `;
+    wrap.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => openModal(coupons.find((c) => c._id === btn.dataset.edit)));
+    });
+    wrap.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this coupon?")) return;
+        await api(`/coupons/${btn.dataset.delete}`, { method: "DELETE" });
+        await load();
+      });
+    });
+  }
+
+  async function load() {
+    [coupons, courses] = await Promise.all([api("/coupons"), api("/courses")]);
+    render();
+  }
+
+  function openModal(coupon) {
+    editingId = coupon?._id ?? null;
+    document.getElementById("modal-title").textContent = coupon ? "Edit coupon" : "New coupon";
+    document.getElementById("form-error").textContent = "";
+    const form = document.getElementById("coupon-form");
+    form.reset();
+    populateCourseSelect(coupon?.applicableCourseSlugs);
+    if (coupon) {
+      form.elements.code.value = coupon.code;
+      form.elements.discountType.value = coupon.discountType;
+      form.elements.discountValue.value = coupon.discountValue;
+      form.elements.minOrderAmount.value = coupon.minOrderAmount || "";
+      form.elements.maxUses.value = coupon.maxUses ?? "";
+      form.elements.expiresAt.value = coupon.expiresAt ? coupon.expiresAt.slice(0, 10) : "";
+      form.elements.active.checked = Boolean(coupon.active);
+    } else {
+      form.elements.active.checked = true;
+    }
+    document.getElementById("overlay").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("overlay").classList.remove("open");
+    editingId = null;
+  }
+
+  document.getElementById("new-coupon").addEventListener("click", () => openModal(null));
+  document.getElementById("cancel-btn").addEventListener("click", closeModal);
+  document.getElementById("overlay").addEventListener("click", (e) => {
+    if (e.target.id === "overlay") closeModal();
+  });
+
+  document.getElementById("coupon-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.code = data.code.trim().toUpperCase();
+    data.discountValue = Number(data.discountValue);
+    data.minOrderAmount = data.minOrderAmount ? Number(data.minOrderAmount) : 0;
+    data.maxUses = data.maxUses ? Number(data.maxUses) : null;
+    data.expiresAt = data.expiresAt || null;
+    data.active = form.elements.active.checked;
+    data.applicableCourseSlugs = Array.from(form.elements.applicableCourseSlugs.selectedOptions).map((o) => o.value);
+
+    try {
+      if (editingId) {
+        await api(`/coupons/${editingId}`, { method: "PUT", body: JSON.stringify(data) });
+      } else {
+        await api("/coupons", { method: "POST", body: JSON.stringify(data) });
+      }
+      closeModal();
+      await load();
+    } catch (err) {
+      document.getElementById("form-error").textContent = err.message;
+    }
+  });
+
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const headers = [
+        { key: "code", label: "Code" },
+        { key: "discountType", label: "Discount Type" },
+        { key: "discountValue", label: "Discount Value" },
+        { key: "minOrderAmount", label: "Min Order Amount" },
+        { key: "maxUses", label: "Max Uses" },
+        { key: "usedCount", label: "Used Count" },
+        { key: "expiresAt", label: "Expires At" },
+        { key: "active", label: "Active" },
+      ];
+      downloadCSV(coupons, "coupons.csv", headers);
+    });
+    await load();
+  })();
+</script>
+</body>
+</html>

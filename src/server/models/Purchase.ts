@@ -15,6 +15,8 @@ const purchaseSchema = new mongoose.Schema(
     currency: { type: String, default: "INR" },
     status: { type: String, default: "completed" }, // "completed", "pending", "failed"
     paymentId: { type: String, required: true },
+    couponCode: { type: String, default: "" },
+    discountAmount: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

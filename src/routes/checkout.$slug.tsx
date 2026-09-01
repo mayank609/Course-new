@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchCourse } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
-import { ShieldCheck, CreditCard, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, CreditCard, ArrowLeft, Loader2, CheckCircle2, Tag, X } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/checkout/$slug")({
   component: CheckoutPage,
@@ -113,7 +114,49 @@ function CheckoutPage() {
     selectedAddons.has(rec.slug)
   );
   const addonsTotal = selectedAddonCourses.reduce((sum, rec) => sum + rec.price, 0);
-  const totalAmount = (course?.price ?? 0) + addonsTotal;
+  const subtotal = (course?.price ?? 0) + addonsTotal;
+
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    finalAmount: number;
+  } | null>(null);
+  const [couponError, setCouponError] = useState("");
+
+  // Any change to the cart (addons) invalidates a previously applied coupon — its discount was computed against the old subtotal
+  useEffect(() => {
+    setAppliedCoupon(null);
+  }, [selectedAddons.size]);
+
+  const applyCouponMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/coupons/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponInput.trim(),
+          courseSlug: slug,
+          addonSlugs: Array.from(selectedAddons),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Invalid coupon");
+      return data as { code: string; discountAmount: number; finalAmount: number };
+    },
+    onSuccess: (data) => {
+      setAppliedCoupon({ code: data.code, discountAmount: data.discountAmount, finalAmount: data.finalAmount });
+      setCouponError("");
+      toast.success(`Coupon "${data.code}" applied!`);
+    },
+    onError: (err) => {
+      setCouponError((err as Error).message);
+      setAppliedCoupon(null);
+    },
+  });
+
+  const totalAmount = appliedCoupon ? appliedCoupon.finalAmount : subtotal;
 
   // Cashfree checkout mutation
   const checkoutMutation = useMutation({
@@ -128,6 +171,7 @@ function CheckoutPage() {
           state: state.trim(),
           city: city.trim(),
           pincode: pincode.trim(),
+          couponCode: appliedCoupon?.code,
         }),
       });
       const data = await res.json();
@@ -392,10 +436,63 @@ function CheckoutPage() {
                     <span className="text-muted-foreground">Platform Fee</span>
                     <span className="text-emerald-600 font-medium">Free</span>
                   </div>
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-emerald-600 font-medium">
+                      <span>Coupon ({appliedCoupon.code})</span>
+                      <span>-₹{appliedCoupon.discountAmount}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between border-t border-border pt-4 text-base font-bold">
                     <span>Total Amount</span>
                     <span className="text-primary">₹{totalAmount}</span>
                   </div>
+                </div>
+
+                {/* Coupon code entry */}
+                <div className="space-y-2">
+                  {appliedCoupon ? (
+                    <div className="flex items-center justify-between gap-2 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                        <Tag className="h-4 w-4" /> {appliedCoupon.code} applied
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAppliedCoupon(null);
+                          setCouponInput("");
+                          setCouponError("");
+                        }}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        aria-label="Remove coupon"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <Input
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value.toUpperCase());
+                            setCouponError("");
+                          }}
+                          placeholder="Have a coupon code?"
+                          className="rounded-xl uppercase"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={!couponInput.trim() || applyCouponMutation.isPending}
+                          onClick={() => applyCouponMutation.mutate()}
+                          className="rounded-xl shrink-0"
+                        >
+                          {applyCouponMutation.isPending ? "Checking..." : "Apply"}
+                        </Button>
+                      </div>
+                      {couponError && <p className="text-xs text-destructive">{couponError}</p>}
+                    </>
+                  )}
                 </div>
 
                 {isProcessingPayment ? (
