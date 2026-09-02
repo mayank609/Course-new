@@ -38,6 +38,18 @@
   </main>
 </div>
 
+<div class="overlay" id="access-overlay">
+  <div class="modal" style="width:460px">
+    <h2 id="access-modal-title">Manage course access</h2>
+    <p class="subtitle" style="margin-top:-8px;margin-bottom:12px">Toggle a course to instantly grant or remove this student's access.</p>
+    <div id="access-course-list" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto"></div>
+    <div class="error-msg" id="access-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="access-close-btn">Close</button>
+    </div>
+  </div>
+</div>
+
 <script src="/admin/admin.js"></script>
 <script>
   let students = [];
@@ -80,7 +92,10 @@
                 }
               </td>
               <td class="muted">${new Date(s.createdAt).toLocaleDateString()}</td>
-              <td><button class="btn-danger btn-sm" data-delete="${s._id}">Delete</button></td>
+              <td style="white-space:nowrap">
+                <button class="btn-ghost btn-sm" data-manage="${s._id}">Manage Access</button>
+                <button class="btn-danger btn-sm" data-delete="${s._id}">Delete</button>
+              </td>
             </tr>
           `).join("")}
         </tbody>
@@ -94,10 +109,77 @@
         await load();
       });
     });
+
+    wrap.querySelectorAll("[data-manage]").forEach((btn) => {
+      btn.addEventListener("click", () => openAccessModal(students.find((s) => s._id === btn.dataset.manage)));
+    });
   }
 
+  let courses = [];
+  let managingStudentId = null;
+
+  function renderAccessList(student) {
+    const list = document.getElementById("access-course-list");
+    if (courses.length === 0) {
+      list.innerHTML = `<p class="muted" style="font-size:0.85rem">No courses exist yet.</p>`;
+      return;
+    }
+    const owned = new Set(student.purchasedCourses || []);
+    list.innerHTML = courses.map((c) => `
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer">
+        <input type="checkbox" data-course-slug="${escapeHtml(c.slug)}" ${owned.has(c.slug) ? "checked" : ""} />
+        <span style="flex-grow:1;font-size:0.85rem;font-weight:600">${escapeHtml(c.title)}</span>
+        <code style="font-size:0.72rem;color:#64748b">${escapeHtml(c.slug)}</code>
+      </label>
+    `).join("");
+
+    list.querySelectorAll("input[type=checkbox]").forEach((checkbox) => {
+      checkbox.addEventListener("change", async (e) => {
+        const slug = e.target.dataset.courseSlug;
+        const errorEl = document.getElementById("access-error");
+        errorEl.textContent = "";
+        e.target.disabled = true;
+        try {
+          if (e.target.checked) {
+            await api(`/students/${managingStudentId}/grant-access`, { method: "POST", body: JSON.stringify({ courseSlug: slug }) });
+            student.purchasedCourses = [...(student.purchasedCourses || []), slug];
+          } else {
+            await api(`/students/${managingStudentId}/revoke-access`, { method: "POST", body: JSON.stringify({ courseSlug: slug }) });
+            student.purchasedCourses = (student.purchasedCourses || []).filter((s) => s !== slug);
+          }
+          const idx = students.findIndex((s) => s._id === managingStudentId);
+          if (idx !== -1) students[idx] = student;
+          render();
+        } catch (err) {
+          errorEl.textContent = err.message;
+          e.target.checked = !e.target.checked;
+        } finally {
+          e.target.disabled = false;
+        }
+      });
+    });
+  }
+
+  function openAccessModal(student) {
+    managingStudentId = student._id;
+    document.getElementById("access-modal-title").textContent = `Manage access — ${student.name}`;
+    document.getElementById("access-error").textContent = "";
+    renderAccessList(student);
+    document.getElementById("access-overlay").classList.add("open");
+  }
+
+  function closeAccessModal() {
+    document.getElementById("access-overlay").classList.remove("open");
+    managingStudentId = null;
+  }
+
+  document.getElementById("access-close-btn").addEventListener("click", closeAccessModal);
+  document.getElementById("access-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "access-overlay") closeAccessModal();
+  });
+
   async function load() {
-    students = await api("/students");
+    [students, courses] = await Promise.all([api("/students"), api("/courses")]);
     render();
   }
 

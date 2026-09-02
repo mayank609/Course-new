@@ -933,6 +933,62 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
     return json({ ok: true });
   }
 
+  const grantAccessMatch = path.match(/^\/students\/([^/]+)\/grant-access$/);
+  if (method === "POST" && grantAccessMatch) {
+    const student = await Student.findById(grantAccessMatch[1]);
+    if (!student) return json({ error: "Student not found" }, { status: 404 });
+
+    const body = (await readJson(request)) as { courseSlug?: string };
+    if (!body.courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
+
+    const course = await Course.findOne({ slug: body.courseSlug });
+    if (!course) return json({ error: "Course not found" }, { status: 404 });
+
+    if (student.purchasedCourses.includes(course.slug)) {
+      return json({ error: "Student already has access to this course" }, { status: 400 });
+    }
+
+    student.purchasedCourses.push(course.slug);
+    await student.save();
+
+    await Purchase.create({
+      studentId: student._id,
+      studentName: student.name,
+      studentEmail: student.email,
+      studentPhone: student.phone || "",
+      courseSlug: course.slug,
+      courseTitle: course.title,
+      amount: 0,
+      currency: course.currency || "INR",
+      status: "completed",
+      paymentId: "admin_grant_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+      source: "Admin Granted",
+    });
+
+    course.enrolledCount = (course.enrolledCount || 0) + 1;
+    await course.save();
+
+    return json({ ok: true });
+  }
+
+  const revokeAccessMatch = path.match(/^\/students\/([^/]+)\/revoke-access$/);
+  if (method === "POST" && revokeAccessMatch) {
+    const student = await Student.findById(revokeAccessMatch[1]);
+    if (!student) return json({ error: "Student not found" }, { status: 404 });
+
+    const body = (await readJson(request)) as { courseSlug?: string };
+    if (!body.courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
+
+    if (!student.purchasedCourses.includes(body.courseSlug)) {
+      return json({ error: "Student does not have access to this course" }, { status: 400 });
+    }
+
+    student.purchasedCourses = student.purchasedCourses.filter((slug: string) => slug !== body.courseSlug);
+    await student.save();
+
+    return json({ ok: true });
+  }
+
   // --- Testimonials CRUD ---
 
   if (method === "GET" && path === "/testimonials") {
