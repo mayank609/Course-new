@@ -19,12 +19,22 @@ function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [expandedCourses, setExpandedCourses] = useState<Set<string>>(new Set());
+  const [expandedLessonModules, setExpandedLessonModules] = useState<Set<string>>(new Set());
 
   const toggleExpand = (courseId: string) => {
     setExpandedCourses((prev) => {
       const next = new Set(prev);
       if (next.has(courseId)) next.delete(courseId);
       else next.add(courseId);
+      return next;
+    });
+  };
+
+  const toggleLessonModule = (key: string) => {
+    setExpandedLessonModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -262,38 +272,56 @@ function DashboardPage() {
                                             <PlayCircle className="h-3.5 w-3.5 text-red-600 animate-pulse" /> Video Lessons ({lessons.length})
                                           </h4>
                                           {lessons.length > 0 ? (
-                                            <div className="space-y-3">
+                                            <div className="space-y-2">
                                               {modules.map((mod, modIdx) => {
                                                 const startIdx = cursor;
                                                 cursor += mod.lessons.length;
+                                                const moduleKey = `${course._id}-${modIdx}`;
+                                                const isModuleOpen = expandedLessonModules.has(moduleKey);
                                                 return (
-                                                  <div key={modIdx} className="space-y-1.5">
-                                                    {modules.length > 1 && (
-                                                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide truncate">
-                                                        {mod.title}
-                                                      </p>
+                                                  <div key={modIdx}>
+                                                    {modules.length > 1 ? (
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => toggleLessonModule(moduleKey)}
+                                                        className="w-full flex items-center gap-1.5 text-left"
+                                                      >
+                                                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide truncate flex-grow">
+                                                          {mod.title}
+                                                        </p>
+                                                        <span className="text-[10px] text-muted-foreground shrink-0">
+                                                          {mod.lessons.length}
+                                                        </span>
+                                                        {isModuleOpen ? (
+                                                          <ChevronUp className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                        ) : (
+                                                          <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                        )}
+                                                      </button>
+                                                    ) : null}
+                                                    {(modules.length === 1 || isModuleOpen) && (
+                                                      <ul className="space-y-2 mt-1.5">
+                                                        {mod.lessons.map((vid, lessonIdx) => {
+                                                          const idx = startIdx + lessonIdx;
+                                                          return (
+                                                            <li key={idx} className="text-sm">
+                                                              {vid.link ? (
+                                                                <Link
+                                                                  to={`/learning/${course.slug}`}
+                                                                  search={{ lesson: idx + 1 }}
+                                                                  className="text-foreground hover:text-primary text-left transition-colors hover:underline flex items-center gap-1.5 group/vid w-full"
+                                                                >
+                                                                  <PlayCircle className="h-4 w-4 text-red-500 shrink-0 group-hover/vid:text-red-600" />
+                                                                  <span className="truncate">{vid.title}</span>
+                                                                </Link>
+                                                              ) : (
+                                                                <span className="text-muted-foreground flex items-center gap-1">• {vid.title}</span>
+                                                              )}
+                                                            </li>
+                                                          );
+                                                        })}
+                                                      </ul>
                                                     )}
-                                                    <ul className="space-y-2">
-                                                      {mod.lessons.map((vid, lessonIdx) => {
-                                                        const idx = startIdx + lessonIdx;
-                                                        return (
-                                                          <li key={idx} className="text-sm">
-                                                            {vid.link ? (
-                                                              <Link
-                                                                to={`/learning/${course.slug}`}
-                                                                search={{ lesson: idx + 1 }}
-                                                                className="text-foreground hover:text-primary text-left transition-colors hover:underline flex items-center gap-1.5 group/vid w-full"
-                                                              >
-                                                                <PlayCircle className="h-4 w-4 text-red-500 shrink-0 group-hover/vid:text-red-600" />
-                                                                <span className="truncate">{vid.title}</span>
-                                                              </Link>
-                                                            ) : (
-                                                              <span className="text-muted-foreground flex items-center gap-1">• {vid.title}</span>
-                                                            )}
-                                                          </li>
-                                                        );
-                                                      })}
-                                                    </ul>
                                                   </div>
                                                 );
                                               })}
