@@ -27,12 +27,16 @@
     <h1>Student Purchases</h1>
     <p class="subtitle">Complete history of direct course buys</p>
     
-    <div class="stats" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 20px;">
+    <div class="stats" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px;">
       <div class="stat-card"><div class="n" id="total-sales">—</div><div class="l">Total Transactions</div></div>
       <div class="stat-card"><div class="n" id="total-revenue">—</div><div class="l">Total Revenue (INR)</div></div>
+      <div class="stat-card"><div class="n" id="ads-percent">—</div><div class="l">From Paid Ads</div></div>
     </div>
 
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px;">
+      <select id="source-filter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; font-weight: 600;">
+        <option value="">All sources</option>
+      </select>
       <button id="btn-export" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Export CSV</button>
     </div>
 
@@ -42,25 +46,62 @@
 <script src="/admin/admin.js"></script>
 <script>
   let purchases = [];
+  let sourceFilter = "";
+
+  function sourceBadge(source) {
+    const label = source || "Direct / Website";
+    const isAds = /ads/i.test(label);
+    const isDirect = /^direct/i.test(label);
+    const isOrganic = /organic|social|referral/i.test(label);
+    const style = isAds
+      ? "background:#fee2e2;color:#991b1b"
+      : isDirect
+      ? "background:#e0f2fe;color:#075985"
+      : isOrganic
+      ? "background:#dcfce7;color:#166534"
+      : "background:#f1f5f9;color:#475569";
+    return `<span class="badge" style="${style};font-weight:700;white-space:nowrap">${escapeHtml(label)}</span>`;
+  }
+
+  function populateSourceFilter() {
+    const select = document.getElementById("source-filter");
+    const sources = Array.from(new Set(purchases.map((p) => p.source || "Direct / Website"))).sort();
+    const current = sourceFilter;
+    select.innerHTML =
+      `<option value="">All sources</option>` +
+      sources.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    select.value = current;
+  }
 
   function render() {
+    populateSourceFilter();
+    const filtered = sourceFilter ? purchases.filter((p) => (p.source || "Direct / Website") === sourceFilter) : purchases;
+
     const wrap = document.getElementById("table-wrap");
+
+    const totalRev = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const adsCount = purchases.filter((p) => /ads/i.test(p.source || "")).length;
+    const adsPercent = purchases.length ? Math.round((adsCount / purchases.length) * 100) : 0;
+    document.getElementById("total-sales").textContent = purchases.length;
+    document.getElementById("total-revenue").textContent = "₹" + totalRev.toLocaleString();
+    document.getElementById("ads-percent").textContent = adsPercent + "%";
+
     if (purchases.length === 0) {
       wrap.innerHTML = `<div class="empty">No purchases recorded yet.</div>`;
       return;
     }
-
-    const totalRev = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
-    document.getElementById("total-sales").textContent = purchases.length;
-    document.getElementById("total-revenue").textContent = "₹" + totalRev.toLocaleString();
+    if (filtered.length === 0) {
+      wrap.innerHTML = `<div class="empty">No purchases match this source.</div>`;
+      return;
+    }
 
     wrap.innerHTML = `
       <table>
         <thead><tr>
-          <th>Transaction ID</th><th>Student Name</th><th>Student Email / Phone</th><th>Billing Location</th><th>Course</th><th>Amount</th><th>Date</th><th></th>
+          <th>Transaction ID</th><th>Student Name</th><th>Student Email / Phone</th><th>Billing Location</th><th>Course</th><th>Amount</th><th>Source</th><th>Date</th><th></th>
         </tr></thead>
         <tbody>
-          ${purchases.map((p) => `
+          ${filtered.map((p) => `
             <tr data-id="${p._id}">
               <td><code style="background:#eee;padding:2px 6px;border-radius:4px">${escapeHtml(p.paymentId)}</code></td>
               <td>${escapeHtml(p.studentName)}</td>
@@ -78,6 +119,7 @@
               </td>
               <td class="muted">${escapeHtml(p.courseTitle)}</td>
               <td style="font-weight:600">₹${p.amount}</td>
+              <td>${sourceBadge(p.source)}</td>
               <td class="muted">${new Date(p.createdAt).toLocaleString()}</td>
               <td><button class="btn-danger btn-sm" data-delete="${p._id}">Delete</button></td>
             </tr>
@@ -103,6 +145,10 @@
   (async () => {
     await requireAuth();
     wireLogout();
+    document.getElementById("source-filter").addEventListener("change", (e) => {
+      sourceFilter = e.target.value;
+      render();
+    });
     document.getElementById("btn-export").addEventListener("click", () => {
       const headers = [
         { key: "paymentId", label: "Transaction ID" },
@@ -114,6 +160,10 @@
         { key: "studentPincode", label: "Pincode" },
         { key: "courseTitle", label: "Course" },
         { key: "amount", label: "Amount" },
+        { key: "source", label: "Source" },
+        { key: "utmSource", label: "UTM Source" },
+        { key: "utmMedium", label: "UTM Medium" },
+        { key: "utmCampaign", label: "UTM Campaign" },
         { key: "createdAt", label: "Purchase Date" }
       ];
       downloadCSV(purchases, "purchases.csv", headers);

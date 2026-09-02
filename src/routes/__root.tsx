@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AdviserModalProvider } from "@/components/site/AdviserModal";
 import { PurchasePopup } from "@/components/site/PurchasePopup";
 import { MetaPixel, useMetaPixelPageViews } from "@/components/site/MetaPixel";
+import { captureAttribution } from "@/lib/attribution";
 
 function NotFoundComponent() {
   return (
@@ -136,6 +137,10 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useMetaPixelPageViews();
+
+  useEffect(() => {
+    captureAttribution();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

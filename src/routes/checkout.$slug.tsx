@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchCourse } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
+import { getAttribution } from "@/lib/attribution";
 import { ShieldCheck, CreditCard, ArrowLeft, Loader2, CheckCircle2, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -172,6 +173,7 @@ function CheckoutPage() {
           city: city.trim(),
           pincode: pincode.trim(),
           couponCode: appliedCoupon?.code,
+          attribution: getAttribution(),
         }),
       });
       const data = await res.json();

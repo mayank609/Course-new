@@ -17,6 +17,12 @@ const purchaseSchema = new mongoose.Schema(
     paymentId: { type: String, required: true },
     couponCode: { type: String, default: "" },
     discountAmount: { type: Number, default: 0 },
+    source: { type: String, default: "Direct / Website" },
+    utmSource: { type: String, default: "" },
+    utmMedium: { type: String, default: "" },
+    utmCampaign: { type: String, default: "" },
+    referrer: { type: String, default: "" },
+    landingPage: { type: String, default: "" },
   },
   { timestamps: true },
 );

@@ -429,7 +429,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const session = getStudentSession(request);
     if (!session) return json({ error: "Not authenticated" }, { status: 401 });
 const body = await readJson(request);
-    const { courseSlug, addonSlugs, phone, state, city, pincode, couponCode } = body as {
+    const { courseSlug, addonSlugs, phone, state, city, pincode, couponCode, attribution } = body as {
       courseSlug?: string;
       addonSlugs?: string[];
       phone?: string;
@@ -437,6 +437,14 @@ const body = await readJson(request);
       city?: string;
       pincode?: string;
       couponCode?: string;
+      attribution?: {
+        source?: string;
+        utmSource?: string;
+        utmMedium?: string;
+        utmCampaign?: string;
+        referrer?: string;
+        landingPage?: string;
+      };
     };
     if (!courseSlug) return json({ error: "courseSlug is required" }, { status: 400 });
     if (!phone || !phone.trim() || !state || !state.trim() || !city || !city.trim() || !pincode || !pincode.trim()) {
@@ -564,6 +572,12 @@ const body = await readJson(request);
         paymentId: orderId,
         couponCode: appliedCouponCode,
         discountAmount: item.discountAmount,
+        source: attribution?.source || "Direct / Website",
+        utmSource: attribution?.utmSource || "",
+        utmMedium: attribution?.utmMedium || "",
+        utmCampaign: attribution?.utmCampaign || "",
+        referrer: attribution?.referrer || "",
+        landingPage: attribution?.landingPage || "",
       });
     }
 
