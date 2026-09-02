@@ -201,7 +201,10 @@
     data.discountValue = Number(data.discountValue);
     data.minOrderAmount = data.minOrderAmount ? Number(data.minOrderAmount) : 0;
     data.maxUses = data.maxUses ? Number(data.maxUses) : null;
-    data.expiresAt = data.expiresAt || null;
+    // A date-only input ("YYYY-MM-DD") parses as UTC midnight, which would expire the
+    // coupon right as that day begins rather than after it's actually over. Treat the
+    // chosen date as valid through the end of that day in the admin's local time.
+    data.expiresAt = data.expiresAt ? `${data.expiresAt}T23:59:59` : null;
     data.active = form.elements.active.checked;
     data.applicableCourseSlugs = Array.from(form.elements.applicableCourseSlugs.selectedOptions).map((o) => o.value);
 
