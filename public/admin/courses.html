@@ -114,8 +114,9 @@
         <textarea name="classworks" rows="3" placeholder="Slides/Notes | https://example.com/classwork-link"></textarea>
       </div>
       <div class="full">
-        <label>YouTube Videos/Lessons (Format: Title | YouTube Link — one per line)</label>
-        <textarea name="videos" rows="3" placeholder="Lesson 1: Introduction | https://www.youtube.com/watch?v=dQw4w9WgXcQ"></textarea>
+        <label>Video Modules (group lessons into sections, e.g. "Module 1: Getting Started")</label>
+        <div id="video-modules-list" style="display:flex;flex-direction:column;gap:12px;margin-top:6px"></div>
+        <button type="button" id="add-module-btn" class="btn-ghost btn-sm" style="margin-top:10px">+ Add Module</button>
       </div>
       <div class="full">
         <label>Recommended courses (shown as paid add-ons the student can also buy at checkout &mdash; hold Ctrl/Cmd to pick 2&ndash;3)</label>
@@ -139,6 +140,46 @@
   let courses = [];
   let categories = [];
   let editingId = null;
+  let videoModules = [];
+
+  function renderModuleEditor() {
+    const list = document.getElementById("video-modules-list");
+    if (videoModules.length === 0) {
+      list.innerHTML = `<p class="muted" style="font-size:0.8rem">No modules yet — add one to start organizing video lessons.</p>`;
+      return;
+    }
+    list.innerHTML = videoModules.map((mod, i) => `
+      <div style="border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#f8fafc" data-module-index="${i}">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <input type="text" class="module-title-input" data-index="${i}" placeholder="Module ${i + 1} title, e.g. Getting Started" value="${escapeHtml(mod.title)}" style="flex-grow:1" />
+          <button type="button" class="btn-danger btn-sm remove-module-btn" data-index="${i}">Remove</button>
+        </div>
+        <textarea class="module-lessons-input" data-index="${i}" rows="3" placeholder="Lesson 1: Introduction | https://www.youtube.com/watch?v=dQw4w9WgXcQ">${escapeHtml(mod.lessonsText)}</textarea>
+      </div>
+    `).join("");
+
+    list.querySelectorAll(".module-title-input").forEach((input) => {
+      input.addEventListener("input", (e) => {
+        videoModules[Number(e.target.dataset.index)].title = e.target.value;
+      });
+    });
+    list.querySelectorAll(".module-lessons-input").forEach((textarea) => {
+      textarea.addEventListener("input", (e) => {
+        videoModules[Number(e.target.dataset.index)].lessonsText = e.target.value;
+      });
+    });
+    list.querySelectorAll(".remove-module-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        videoModules.splice(Number(e.target.dataset.index), 1);
+        renderModuleEditor();
+      });
+    });
+  }
+
+  function addModule(title = "", lessonsText = "") {
+    videoModules.push({ title, lessonsText });
+    renderModuleEditor();
+  }
 
   function populateCategorySelect(currentValue) {
     const select = document.getElementById("category-select");
@@ -270,7 +311,7 @@
         if (!field) continue;
         if (key === "published") field.checked = Boolean(value);
         else if (key === "highlights") field.value = (value || []).join("\n");
-        else if (key === "quizzes" || key === "assignments" || key === "classworks" || key === "videos") {
+        else if (key === "quizzes" || key === "assignments" || key === "classworks") {
           field.value = formatList(value);
         }
         else if (key === "recommendedCourses") continue; // handled by populateRecommendedSelect
@@ -279,6 +320,18 @@
     } else {
       form.elements.published.checked = true;
     }
+
+    // Video modules: use existing modules if present, otherwise migrate the old flat
+    // video list into a single starter module so nothing is lost.
+    if (course?.videoModules && course.videoModules.length > 0) {
+      videoModules = course.videoModules.map((m) => ({ title: m.title, lessonsText: formatList(m.lessons) }));
+    } else if (course?.videos && course.videos.length > 0) {
+      videoModules = [{ title: "Lessons", lessonsText: formatList(course.videos) }];
+    } else {
+      videoModules = [{ title: "", lessonsText: "" }];
+    }
+    renderModuleEditor();
+
     document.getElementById("overlay").classList.add("open");
   }
 
@@ -294,6 +347,8 @@
     form: document.getElementById("course-form"),
     folder: "skillup-hub/courses",
   });
+
+  document.getElementById("add-module-btn").addEventListener("click", () => addModule());
 
   document.getElementById("new-course").addEventListener("click", () => openModal(null));
   document.getElementById("cancel-btn").addEventListener("click", closeModal);
@@ -330,7 +385,9 @@
     data.quizzes = parseList(data.quizzes);
     data.assignments = parseList(data.assignments);
     data.classworks = parseList(data.classworks);
-    data.videos = parseList(data.videos);
+    data.videoModules = videoModules
+      .map((mod) => ({ title: mod.title.trim(), lessons: parseList(mod.lessonsText) }))
+      .filter((mod) => mod.title && mod.lessons.length > 0);
 
     try {
       if (editingId) {

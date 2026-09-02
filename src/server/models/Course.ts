@@ -19,6 +19,18 @@ const courseSchema = new mongoose.Schema(
     assignments: { type: [{ title: { type: String, required: true }, link: { type: String, default: "" } }], default: [] },
     classworks: { type: [{ title: { type: String, required: true }, link: { type: String, default: "" } }], default: [] },
     videos: { type: [{ title: { type: String, required: true }, link: { type: String, default: "" } }], default: [] },
+    videoModules: {
+      type: [
+        {
+          title: { type: String, required: true },
+          lessons: {
+            type: [{ title: { type: String, required: true }, link: { type: String, default: "" } }],
+            default: [],
+          },
+        },
+      ],
+      default: [],
+    },
     imageUrl: { type: String, default: "" },
     syllabusUrl: { type: String, default: "" },
     published: { type: Boolean, default: true },

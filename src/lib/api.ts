@@ -3,6 +3,11 @@ export type CourseMaterial = {
   link?: string;
 };
 
+export type VideoModule = {
+  title: string;
+  lessons: CourseMaterial[];
+};
+
 export type Course = {
   _id: string;
   title: string;
@@ -23,6 +28,7 @@ export type Course = {
   assignments?: CourseMaterial[];
   classworks?: CourseMaterial[];
   videos?: CourseMaterial[];
+  videoModules?: VideoModule[];
   imageUrl: string;
   syllabusUrl?: string;
   published: boolean;

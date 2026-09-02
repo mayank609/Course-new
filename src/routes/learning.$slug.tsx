@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CustomVideoPlayer } from "@/components/site/CustomVideoPlayer";
 import { fetchCourse } from "@/lib/api";
+import { getCourseModules, flattenLessons } from "@/lib/courseModules";
 import {
   ArrowLeft,
   PlayCircle,
@@ -16,7 +17,9 @@ import {
   Award,
   BookOpen,
   ChevronRight,
-  ListVideo
+  ChevronDown,
+  ListVideo,
+  Folder
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +51,7 @@ function LearningClassroomPage() {
 
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"info" | "classworks" | "assignments" | "quizzes">("info");
+  const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set([0]));
 
   // Fetch Student Profile (to verify authentication and purchase)
   const { data: student, isLoading: isProfileLoading, isError: isProfileError } = useQuery({
@@ -68,12 +72,29 @@ function LearningClassroomPage() {
     queryFn: () => fetchCourse(slug),
   });
 
+  const modules = getCourseModules(course);
+  const videos = flattenLessons(modules);
+
   // Synchronize index with search param
   useEffect(() => {
-    if (lesson && lesson > 0 && course && course.videos && lesson <= course.videos.length) {
+    if (lesson && lesson > 0 && lesson <= videos.length) {
       setActiveVideoIndex(lesson - 1);
     }
-  }, [lesson, course]);
+  }, [lesson, videos.length]);
+
+  // Auto-expand whichever module contains the active lesson
+  useEffect(() => {
+    let cursor = 0;
+    for (let i = 0; i < modules.length; i++) {
+      const count = modules[i].lessons.length;
+      if (activeVideoIndex >= cursor && activeVideoIndex < cursor + count) {
+        setExpandedModules((prev) => (prev.has(i) ? prev : new Set(prev).add(i)));
+        break;
+      }
+      cursor += count;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeVideoIndex, modules.length]);
 
   // Redirect to login if unauthorized
   useEffect(() => {
@@ -98,7 +119,6 @@ function LearningClassroomPage() {
     return null; // Will redirect in useEffect
   }
 
-  const videos = course?.videos || [];
   const currentVideo = videos[activeVideoIndex];
   const ytVideoId = currentVideo?.link ? getYoutubeVideoId(currentVideo.link) : null;
 
@@ -149,52 +169,93 @@ function LearningClassroomPage() {
                 </div>
 
                 {/* Scrollable List */}
-                <div className="flex-grow overflow-y-auto pt-4 space-y-2 max-h-[280px] lg:max-h-none">
-                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground px-2 mb-3">
-                    <ListVideo className="h-4 w-4" /> Lesson Playlist ({videos.length})
+                <div className="flex-grow overflow-y-auto pt-4 space-y-3 max-h-[280px] lg:max-h-none">
+                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground px-2 mb-1">
+                    <ListVideo className="h-4 w-4" /> Course Content ({videos.length} lesson{videos.length === 1 ? "" : "s"})
                   </div>
-                  
+
                   {videos.length === 0 ? (
                     <div className="text-center p-6 text-sm text-muted-foreground italic bg-muted/20 rounded-2xl">
                       No video lessons uploaded yet.
                     </div>
                   ) : (
-                    videos.map((vid, idx) => {
-                      const isActive = idx === activeVideoIndex;
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => setActiveVideoIndex(idx)}
-                          className={`w-full text-left p-3 rounded-2xl flex gap-3 transition-all duration-200 group relative border outline-none ${
-                            isActive
-                              ? "bg-primary/5 border-primary/20 shadow-sm"
-                              : "bg-transparent border-transparent hover:bg-muted/30"
-                          }`}
-                        >
-                          {isActive && (
-                            <div className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-primary rounded-r-full" />
-                          )}
-                          
-                          <div className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-semibold transition-colors ${
-                            isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/15"
-                          }`}>
-                            {idx + 1}
-                          </div>
-                          
-                          <div className="min-w-0 flex-grow py-0.5">
-                            <p className={`text-xs font-semibold line-clamp-2 leading-snug transition-colors ${
-                              isActive ? "text-primary font-bold" : "text-foreground"
-                            }`}>
-                              {vid.title}
-                            </p>
-                          </div>
+                    (() => {
+                      let cursor = 0;
+                      return modules.map((mod, modIdx) => {
+                        const startIdx = cursor;
+                        cursor += mod.lessons.length;
+                        const isExpanded = expandedModules.has(modIdx);
+                        return (
+                          <div key={modIdx} className="border border-border/60 rounded-2xl overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedModules((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(modIdx)) next.delete(modIdx);
+                                  else next.add(modIdx);
+                                  return next;
+                                })
+                              }
+                              className="w-full flex items-center gap-2 p-3 bg-muted/20 hover:bg-muted/30 transition-colors text-left"
+                            >
+                              <Folder className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span className="text-xs font-bold text-foreground flex-grow min-w-0 truncate">
+                                {mod.title}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground font-medium shrink-0">
+                                {mod.lessons.length}
+                              </span>
+                              <ChevronDown
+                                className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                              />
+                            </button>
 
-                          <ChevronRight className={`h-3 w-3 shrink-0 self-center transition-all ${
-                            isActive ? "text-primary translate-x-0.5 opacity-100" : "text-muted-foreground/30 opacity-0 group-hover:opacity-100"
-                          }`} />
-                        </button>
-                      );
-                    })
+                            {isExpanded && (
+                              <div className="p-1.5 space-y-1">
+                                {mod.lessons.map((vid, lessonIdx) => {
+                                  const idx = startIdx + lessonIdx;
+                                  const isActive = idx === activeVideoIndex;
+                                  return (
+                                    <button
+                                      key={idx}
+                                      onClick={() => setActiveVideoIndex(idx)}
+                                      className={`w-full text-left p-2.5 rounded-xl flex gap-3 transition-all duration-200 group relative border outline-none ${
+                                        isActive
+                                          ? "bg-primary/5 border-primary/20 shadow-sm"
+                                          : "bg-transparent border-transparent hover:bg-muted/30"
+                                      }`}
+                                    >
+                                      {isActive && (
+                                        <div className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-primary rounded-r-full" />
+                                      )}
+
+                                      <div className={`h-7 w-7 rounded-xl flex items-center justify-center shrink-0 text-[11px] font-semibold transition-colors ${
+                                        isActive ? "bg-primary text-white" : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/15"
+                                      }`}>
+                                        {idx + 1}
+                                      </div>
+
+                                      <div className="min-w-0 flex-grow py-0.5">
+                                        <p className={`text-xs font-semibold line-clamp-2 leading-snug transition-colors ${
+                                          isActive ? "text-primary font-bold" : "text-foreground"
+                                        }`}>
+                                          {vid.title}
+                                        </p>
+                                      </div>
+
+                                      <ChevronRight className={`h-3 w-3 shrink-0 self-center transition-all ${
+                                        isActive ? "text-primary translate-x-0.5 opacity-100" : "text-muted-foreground/30 opacity-0 group-hover:opacity-100"
+                                      }`} />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()
                   )}
                 </div>
               </aside>
