@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -55,6 +56,19 @@ export function AdviserModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [courseTitle, setCourseTitle] = useState<string | undefined>();
 
+  // Existing students who've already purchased a course don't need the "talk to an adviser" pitch.
+  const { data: student, isFetched: isStudentFetched } = useQuery({
+    queryKey: ["student-me"],
+    queryFn: async () => {
+      const res = await fetch("/api/student/me");
+      if (!res.ok) return null;
+      return res.json() as Promise<{ purchasedCourses?: string[] }>;
+    },
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const isExistingCustomer = Boolean(student?.purchasedCourses?.length);
+
   const value = useMemo<AdviserModalContextValue>(
     () => ({
       open: (title) => {
@@ -66,6 +80,7 @@ export function AdviserModalProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    if (!isStudentFetched || isExistingCustomer) return;
     if (sessionStorage.getItem(WELCOME_POPUP_KEY)) return;
     const timer = setTimeout(() => {
       sessionStorage.setItem(WELCOME_POPUP_KEY, "1");
@@ -73,7 +88,7 @@ export function AdviserModalProvider({ children }: { children: ReactNode }) {
       setIsOpen(true);
     }, 1200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isStudentFetched, isExistingCustomer]);
 
   return (
     <AdviserModalContext.Provider value={value}>
