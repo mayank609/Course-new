@@ -13,6 +13,7 @@ import { sendPasswordResetEmail, sendRegistrationOtpEmail } from "./mail";
 import { sendWhatsAppPurchaseNotification } from "./whatsapp";
 import { uploadImageToCloudinary } from "./cloudinary";
 import { validateCoupon } from "./coupons";
+import { sendMetaPurchaseEvent } from "./metaConversions";
 import {
   adminCookieHeader,
   clearAdminCookieHeader,
@@ -22,6 +23,7 @@ import {
   signStudentSession,
   studentCookieHeader,
   clearStudentCookieHeader,
+  parseCookies,
 } from "./auth";
 
 const PASSWORD_RESET_PURPOSE = "password_reset";
@@ -660,6 +662,23 @@ const body = await readJson(request);
             console.error("Error triggering Cashfree WhatsApp notification:", err);
           });
         }
+
+        const cookies = parseCookies(request.headers.get("cookie"));
+        const forwardedFor = request.headers.get("x-forwarded-for");
+        sendMetaPurchaseEvent({
+          email: student.email,
+          phone: student.phone,
+          value: totalAmount,
+          currency,
+          eventId: orderId,
+          eventSourceUrl: `${url.origin}/thank-you`,
+          clientIpAddress: forwardedFor ? forwardedFor.split(",")[0].trim() : undefined,
+          clientUserAgent: request.headers.get("user-agent") || undefined,
+          fbc: cookies._fbc,
+          fbp: cookies._fbp,
+        }).catch((err) => {
+          console.error("Error sending Meta Conversions API purchase event:", err);
+        });
       } else {
         const anyPurchases = await Purchase.find({ paymentId: orderId });
         if (anyPurchases.length > 0) {

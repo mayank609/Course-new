@@ -7,7 +7,7 @@ const MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 export type AdminSession = { id: string; email: string };
 export type StudentSession = { id: string; email: string; name: string };
 
-function parseCookies(header: string | null): Record<string, string> {
+export function parseCookies(header: string | null): Record<string, string> {
   const out: Record<string, string> = {};
   if (!header) return out;
   for (const part of header.split(";")) {

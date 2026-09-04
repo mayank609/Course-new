@@ -24,13 +24,17 @@ function ThankYouPage() {
 
   useEffect(() => {
     // Track Purchase and CompleteRegistration events
-    trackMetaEvent("Purchase", {
-      content_name: course || "Course Purchase",
-      content_type: "product",
-      value: amount ?? 0,
-      currency: currency || "INR",
-      order_id: orderId || undefined,
-    });
+    trackMetaEvent(
+      "Purchase",
+      {
+        content_name: course || "Course Purchase",
+        content_type: "product",
+        value: amount ?? 0,
+        currency: currency || "INR",
+        order_id: orderId || undefined,
+      },
+      orderId || undefined
+    );
     trackMetaEvent("CompleteRegistration", {
       content_name: course || "Course Registration",
     });
