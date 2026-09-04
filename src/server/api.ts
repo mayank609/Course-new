@@ -699,6 +699,12 @@ const body = await readJson(request);
         courseSlugs,
       });
     } else {
+      // "ACTIVE" means the customer may still complete payment — the frontend keeps polling.
+      // Anything else (EXPIRED, TERMINATED, TERMINATION_REQUESTED, etc.) is a terminal failure,
+      // so stop leaving the pending Purchase records stuck forever.
+      if (cfData.order_status && cfData.order_status !== "ACTIVE") {
+        await Purchase.updateMany({ paymentId: orderId, status: "pending" }, { status: "failed" });
+      }
       return json({ ok: false, status: cfData.order_status, error: "Payment not completed or failed" });
     }
   }
