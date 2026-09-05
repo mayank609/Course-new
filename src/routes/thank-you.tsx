@@ -23,17 +23,36 @@ function ThankYouPage() {
   const { course, amount, currency, orderId } = Route.useSearch();
 
   useEffect(() => {
-    // Track Purchase and CompleteRegistration events
+    // A Purchase without an order id cannot be deduplicated against the server
+    // copy, and one without a real value makes ROAS uncomputable — Meta reports
+    // those as "missing value" rather than counting the revenue. In both cases
+    // the server-side Conversions API event from /api/payment/verify is the
+    // authoritative record, so firing a degenerate browser event only adds noise.
+    if (!orderId) return;
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return;
+
+    // Landing on /thank-you again (refresh, back button, re-opened link) must not
+    // re-fire the conversion. Meta only deduplicates by event_id for 48 hours.
+    const guardKey = `meta_purchase_sent_${orderId}`;
+    try {
+      if (localStorage.getItem(guardKey)) return;
+      localStorage.setItem(guardKey, "1");
+    } catch {
+      // Private mode / storage disabled — fall through and rely on event_id dedup.
+    }
+
     trackMetaEvent(
       "Purchase",
       {
         content_name: course || "Course Purchase",
         content_type: "product",
-        value: amount ?? 0,
+        value: amount,
         currency: currency || "INR",
-        order_id: orderId || undefined,
+        order_id: orderId,
       },
-      orderId || undefined
+      // Same id the server sends from the payment-verify handler, so Meta pairs
+      // the browser and server events instead of counting two purchases.
+      orderId
     );
     trackMetaEvent("CompleteRegistration", {
       content_name: course || "Course Registration",

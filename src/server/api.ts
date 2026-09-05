@@ -13,7 +13,7 @@ import { sendPasswordResetEmail, sendRegistrationOtpEmail } from "./mail";
 import { sendWhatsAppPurchaseNotification } from "./whatsapp";
 import { uploadImageToCloudinary } from "./cloudinary";
 import { validateCoupon } from "./coupons";
-import { sendMetaPurchaseEvent } from "./metaConversions";
+import { ALLOWED_META_EVENTS, sendMetaEvent, sendMetaPurchaseEvent } from "./metaConversions";
 import {
   adminCookieHeader,
   clearAdminCookieHeader,
@@ -69,6 +69,68 @@ function requireAdmin(request: Request): Response | null {
 
 async function handlePublicRoute(request: Request, path: string, url: URL): Promise<Response> {
   const method = request.method;
+
+  // Mirrors a browser Pixel event to the Conversions API using the event_id the
+  // browser already sent, so Meta deduplicates the pair instead of double-counting.
+  // This is what lifts CAPI coverage for ViewContent / AddToCart / InitiateCheckout
+  // from ~0% (only Purchase was ever sent server-side) up to browser parity.
+  if (method === "POST" && path === "/meta/track") {
+    const body = await readJson(request);
+    const eventName = typeof body.eventName === "string" ? body.eventName : "";
+    const eventId = typeof body.eventId === "string" ? body.eventId : "";
+    const eventSourceUrl = typeof body.eventSourceUrl === "string" ? body.eventSourceUrl : url.origin;
+
+    if (!(ALLOWED_META_EVENTS as readonly string[]).includes(eventName) || !eventId) {
+      return json({ error: "Unsupported event" }, { status: 400 });
+    }
+
+    // Only pass through a known-safe subset of custom_data — this endpoint is
+    // public, so arbitrary caller-supplied fields must not reach the dataset.
+    const raw = (body.customData ?? {}) as Record<string, unknown>;
+    const customData: Record<string, unknown> = {};
+    for (const key of ["content_name", "content_category", "content_type", "search_string"]) {
+      if (typeof raw[key] === "string") customData[key] = (raw[key] as string).slice(0, 200);
+    }
+    if (Array.isArray(raw.content_ids)) {
+      customData.content_ids = raw.content_ids.filter((v) => typeof v === "string").slice(0, 20);
+    }
+    if (typeof raw.value === "number" && Number.isFinite(raw.value) && raw.value >= 0) {
+      customData.value = Number(raw.value.toFixed(2));
+      customData.currency = typeof raw.currency === "string" ? raw.currency : "INR";
+    }
+
+    // Attach the logged-in identity when we have one — this is what keeps Event
+    // Match Quality high on the server copy.
+    let email: string | undefined;
+    let phone: string | undefined;
+    const session = getStudentSession(request);
+    if (session) {
+      const student = await Student.findById(session.id).select("email phone");
+      if (student) {
+        email = student.email;
+        phone = student.phone || undefined;
+      }
+    }
+
+    const cookies = parseCookies(request.headers.get("cookie"));
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    sendMetaEvent({
+      eventName,
+      eventId,
+      eventSourceUrl,
+      customData,
+      email,
+      phone,
+      clientIpAddress: forwardedFor ? forwardedFor.split(",")[0].trim() : undefined,
+      clientUserAgent: request.headers.get("user-agent") || undefined,
+      fbc: cookies._fbc,
+      fbp: cookies._fbp,
+    }).catch((err) => {
+      console.error(`Error sending Meta Conversions API ${eventName} event:`, err);
+    });
+
+    return json({ ok: true });
+  }
 
   if (method === "GET" && path === "/courses") {
     const filter: Record<string, unknown> = { published: true };
@@ -671,6 +733,9 @@ const body = await readJson(request);
           value: totalAmount,
           currency,
           eventId: orderId,
+          contentIds: courseSlugs,
+          contentName: courseTitle,
+          numItems: courseSlugs.length,
           eventSourceUrl: `${url.origin}/thank-you`,
           clientIpAddress: forwardedFor ? forwardedFor.split(",")[0].trim() : undefined,
           clientUserAgent: request.headers.get("user-agent") || undefined,

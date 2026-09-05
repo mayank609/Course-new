@@ -79,8 +79,12 @@ function CheckoutPage() {
     queryFn: () => fetchCourse(slug),
   });
 
+  // Gated on `student`: an unauthenticated visitor who lands on /checkout/:slug is
+  // immediately redirected to /login and never starts a checkout. Firing on plain
+  // page load counted those redirects as InitiateCheckout, which is why the event
+  // volume ran far above ViewContent.
   useEffect(() => {
-    if (course) {
+    if (course && student) {
       trackMetaEvent("InitiateCheckout", {
         content_name: course.title,
         content_category: course.category,
@@ -90,7 +94,7 @@ function CheckoutPage() {
         currency: "INR",
       });
     }
-  }, [course]);
+  }, [course, student]);
 
   // If unauthorized, redirect to login
   useEffect(() => {
