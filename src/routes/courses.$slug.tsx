@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
-import { Clock, Users, CheckCircle2, ArrowLeft, Award, Flame, Sparkles, TrendingUp } from "lucide-react";
+import { Clock, Users, CheckCircle2, ArrowLeft, Award, Flame, Sparkles, TrendingUp, ChevronDown, PlayCircle, Lock, BookOpen } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useAdviserModal } from "@/components/site/AdviserModal";
 import { fetchCourse } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
+import { getCourseModules, flattenLessons } from "@/lib/courseModules";
 
 export function getTagBadge(tag: string) {
   const t = tag.toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -170,6 +171,8 @@ function CourseDetailPage() {
                     </ul>
                   </div>
                 )}
+
+                <CourseCurriculum course={course} hasPurchased={hasPurchased} />
               </div>
 
               <div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-card)] sticky top-24 space-y-5">
@@ -241,6 +244,115 @@ function CourseDetailPage() {
         </div>
       </main>
       <Footer />
+    </div>
+  );
+}
+
+/**
+ * Public curriculum outline. Module and lesson titles are visible to everyone so
+ * a visitor can judge the course before buying; the API strips the underlying
+ * links for anyone who has not purchased, so nothing here can leak content.
+ */
+function CourseCurriculum({
+  course,
+  hasPurchased,
+}: {
+  course: Parameters<typeof getCourseModules>[0];
+  hasPurchased: boolean;
+}) {
+  const modules = getCourseModules(course);
+  const totalLessons = flattenLessons(modules).length;
+  // First module open by default — shows the shape of the course without a click.
+  const [openModules, setOpenModules] = useState<Set<number>>(new Set([0]));
+
+  if (modules.length === 0) return null;
+
+  const toggle = (i: number) =>
+    setOpenModules((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+
+  const allOpen = openModules.size === modules.length;
+
+  return (
+    <div className="mt-10">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="font-serif text-xl font-bold">Course curriculum</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {modules.length} {modules.length === 1 ? "module" : "modules"} · {totalLessons}{" "}
+            {totalLessons === 1 ? "lesson" : "lessons"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpenModules(allOpen ? new Set() : new Set(modules.map((_, i) => i)))}
+          className="text-xs font-semibold text-primary hover:underline"
+        >
+          {allOpen ? "Collapse all" : "Expand all"}
+        </button>
+      </div>
+
+      <div className="mt-4 divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
+        {modules.map((mod, i) => {
+          const isOpen = openModules.has(i);
+          return (
+            <div key={`${mod.title}-${i}`}>
+              <button
+                type="button"
+                onClick={() => toggle(i)}
+                aria-expanded={isOpen}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/50 transition-colors"
+              >
+                <BookOpen className="h-4 w-4 text-primary shrink-0" />
+                <span className="flex-grow font-semibold text-sm">{mod.title}</span>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {mod.lessons.length} {mod.lessons.length === 1 ? "lesson" : "lessons"}
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${
+                    isOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isOpen && (
+                <ul className="pb-2 bg-muted/20">
+                  {mod.lessons.map((lesson, li) => (
+                    <li
+                      key={`${lesson.title}-${li}`}
+                      className="flex items-center gap-3 pl-11 pr-4 py-2 text-sm"
+                    >
+                      {hasPurchased ? (
+                        <PlayCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+                      ) : (
+                        <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      )}
+                      <span className={hasPurchased ? "" : "text-muted-foreground"}>
+                        {lesson.title}
+                      </span>
+                    </li>
+                  ))}
+                  {mod.lessons.length === 0 && (
+                    <li className="pl-11 pr-4 py-2 text-sm text-muted-foreground">
+                      Lessons coming soon
+                    </li>
+                  )}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {!hasPurchased && (
+        <p className="mt-3 text-xs text-muted-foreground flex items-center gap-1.5">
+          <Lock className="h-3 w-3" />
+          Enrol to unlock all {totalLessons} lessons, quizzes and assignments.
+        </p>
+      )}
     </div>
   );
 }

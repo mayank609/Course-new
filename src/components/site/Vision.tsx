@@ -6,7 +6,7 @@ export function Vision() {
     <section className="px-4 py-16 sm:py-20 bg-slate-50 border-t border-slate-100/60 overflow-hidden">
       <div className="mx-auto max-w-7xl">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          
+
           {/* Left Column: Instructor details */}
           <Reveal className="space-y-6">
             <div>
@@ -19,7 +19,7 @@ export function Vision() {
                 <span className="text-purple-600 block text-lg font-bold mt-1">Microsoft Certified Trainer</span>
               </h2>
             </div>
-            
+
             <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed">
               Shubham brings over a decade of real-world corporate experience, helping professionals master Microsoft Office tools integrated with advanced AI features. His practical, case-study-driven pedagogy simplifies complex automation workflows, ensuring you build skills that translate directly to workplace efficiency.
             </p>
@@ -62,7 +62,7 @@ export function Vision() {
                   <span className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Industry Expert</span>
                 </div>
                 <h3 className="font-sans text-base font-extrabold text-slate-800">
-                  10+ Years of Corporate Training Experience
+                  12+ Years of Corporate Training Experience
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
                   Trusted by working professionals to teach Excel, automation, and AI-powered productivity workflows.

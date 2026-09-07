@@ -97,7 +97,7 @@ function CoursesPage() {
   const categoriesFromCourses = source.map((c) => c.category);
   const categoriesFromDb = dbCategories ? dbCategories.map((cat) => cat.name) : [];
   const categories = Array.from(new Set([...categoriesFromDb, ...categoriesFromCourses]));
-  
+
   let visible = category ? source.filter((c) => c.category === category) : source;
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase().trim();
@@ -115,7 +115,7 @@ function CoursesPage() {
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-[color:var(--brand-gold-foreground)] font-semibold uppercase tracking-[0.2em] text-xs">
-              Full Catalog
+              Full Catalogue
             </p>
             <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-bold tracking-tight">
               All Courses
@@ -245,7 +245,7 @@ function CoursesPage() {
                           size="sm"
                           className="shine flex-1 rounded-full bg-[image:var(--gradient-primary)] text-white hover:-translate-y-0.5 transition-transform text-xs"
                         >
-                          <Link 
+                          <Link
                             to={c.slug ? `/checkout/${c.slug}` : "/courses"}
                             onClick={() => {
                               if (c.slug) {

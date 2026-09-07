@@ -9,6 +9,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { BookOpen, User, Phone, Mail, Award, ArrowRight, LogOut, FileText, ClipboardList, HelpCircle, ChevronDown, ChevronUp, PlayCircle, X } from "lucide-react";
 import { Course } from "@/lib/api";
 import { getCourseModules, flattenLessons } from "@/lib/courseModules";
+import { getCourseImage } from "@/lib/courseImages";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
@@ -219,7 +220,19 @@ function DashboardPage() {
                               className="bg-card border border-border rounded-3xl p-6 shadow-[var(--shadow-card)] flex flex-col gap-6 hover:shadow-md transition-shadow"
                             >
                               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 w-full">
-                                <div className="space-y-1.5 max-w-xl">
+                                <div className="flex flex-col sm:flex-row items-start gap-5 max-w-xl">
+                                  <Link
+                                    to={`/learning/${course.slug}`}
+                                    className="w-full sm:w-40 shrink-0 aspect-video rounded-2xl overflow-hidden border border-border bg-muted"
+                                  >
+                                    <img
+                                      src={getCourseImage(course.category, course.imageUrl)}
+                                      alt={course.title}
+                                      loading="lazy"
+                                      className="h-full w-full object-cover object-top hover:scale-105 transition-transform duration-300"
+                                    />
+                                  </Link>
+                                  <div className="space-y-1.5">
                                   <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                                     {course.category}
                                   </span>
@@ -234,6 +247,7 @@ function DashboardPage() {
                                     <span className="flex items-center gap-1 text-emerald-600 font-semibold">
                                       <Award className="h-3.5 w-3.5" /> Full Access
                                     </span>
+                                  </div>
                                   </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto shrink-0">

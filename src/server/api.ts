@@ -136,7 +136,11 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const filter: Record<string, unknown> = { published: true };
     const category = url.searchParams.get("category");
     if (category) filter.category = category;
-    const courses = await Course.find(filter).sort({ createdAt: -1 });
+    // Listing cards never render lesson content, so exclude the link-bearing
+    // fields at the query level rather than shipping them to every visitor.
+    const courses = await Course.find(filter)
+      .select("-videos -videoModules -quizzes -assignments -classworks")
+      .sort({ createdAt: -1 });
     const formatted = courses.map(c => {
       const obj = c.toObject();
       obj.enrolledCount = Math.max(50, obj.enrolledCount || 0);
@@ -155,14 +159,47 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     
     const courseObj = course.toObject();
     courseObj.enrolledCount = Math.max(50, courseObj.enrolledCount || 0);
-    
+
+    // The curriculum outline is public — visitors should see which modules and
+    // lessons a course contains before buying. The `link` on each item is not:
+    // it points at the actual video/quiz/assignment, so it is stripped for
+    // anyone who has not purchased the course. Previously toObject() shipped
+    // every link to any anonymous caller of this endpoint.
+    const session = getStudentSession(request);
+    let hasAccess = false;
+    if (session) {
+      const viewer = await Student.findById(session.id).select("purchasedCourses");
+      hasAccess = Boolean(viewer?.purchasedCourses?.includes(course.slug));
+    }
+
+    if (!hasAccess) {
+      const stripItems = (items?: { title?: string; link?: string }[]) =>
+        (items ?? []).map((i) => ({ title: i.title, link: "" }));
+      courseObj.videos = stripItems(courseObj.videos);
+      courseObj.quizzes = stripItems(courseObj.quizzes);
+      courseObj.assignments = stripItems(courseObj.assignments);
+      courseObj.classworks = stripItems(courseObj.classworks);
+      courseObj.videoModules = (courseObj.videoModules ?? []).map(
+        (m: { title?: string; lessons?: { title?: string; link?: string }[] }) => ({
+          title: m.title,
+          lessons: stripItems(m.lessons),
+        })
+      );
+    }
+
     const recommendedObj = recommendedCourseDetails.map(rec => {
       const obj = rec.toObject();
       obj.enrolledCount = Math.max(50, obj.enrolledCount || 0);
+      // Upsell cards only need the marketing fields, never the content links.
+      delete obj.videos;
+      delete obj.videoModules;
+      delete obj.quizzes;
+      delete obj.assignments;
+      delete obj.classworks;
       return obj;
     });
 
-    return json({ ...courseObj, recommendedCourseDetails: recommendedObj });
+    return json({ ...courseObj, hasAccess, recommendedCourseDetails: recommendedObj });
   }
 
   if (method === "GET" && path === "/testimonials") {
