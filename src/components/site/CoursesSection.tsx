@@ -11,6 +11,7 @@ import { sampleCourses } from "@/lib/sampleCourses";
 import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
 import { toDirectImageUrl } from "@/lib/imageUrl";
+import { getCoursePricing } from "@/lib/coursePricing";
 
 function getDefaultCourseIcon(title: string): string {
   const t = title.toLowerCase();
@@ -260,38 +261,57 @@ export function CoursesSection() {
                         </div>
 
                         {/* Action trigger footer */}
-                        <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto w-full relative z-20 gap-3">
-                          <div className="text-left shrink-0">
-                            <span className="block text-[9px] uppercase font-bold text-slate-400 tracking-wider">Price</span>
-                            <span className="text-lg font-extrabold text-[#6b21a8]">
-                              ₹{(c.price || 499).toLocaleString()}
-                            </span>
-                          </div>
-                          
-                          <Button
-                            asChild
-                            size="sm"
-                            className="rounded-full bg-[#6b21a8] text-white hover:bg-[#581c87] shadow-md shadow-purple-600/10 font-bold px-4 py-2.5 text-xs transition-transform hover:-translate-y-0.5"
-                          >
-                            <Link 
-                              to={c.slug ? `/checkout/${c.slug}` : "/courses"}
-                              onClick={() => {
-                                if (c.slug) {
-                                  trackMetaEvent("AddToCart", {
-                                    content_name: c.title,
-                                    content_category: c.category,
-                                    content_ids: [c.key],
-                                    content_type: "product",
-                                    value: c.price || 499,
-                                    currency: "INR",
-                                  });
-                                }
-                              }}
-                            >
-                              Add to Cart
-                            </Link>
-                          </Button>
-                        </div>
+                        {(() => {
+                          const pricing = getCoursePricing(c.price || 499, c.originalPrice);
+                          return (
+                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto w-full relative z-20 gap-2">
+                              <div className="text-left shrink-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="block text-[9px] uppercase font-bold text-slate-400 tracking-wider">Price</span>
+                                  {pricing.hasDiscount && (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.2 rounded">
+                                      {pricing.discountPercent}% OFF
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-baseline gap-1.5 mt-0.5">
+                                  <span className="text-lg font-extrabold text-[#6b21a8]">
+                                    ₹{pricing.price.toLocaleString()}
+                                  </span>
+                                  {pricing.hasDiscount && (
+                                    <span className="text-xs text-slate-400 line-through font-medium">
+                                      ₹{pricing.originalPrice.toLocaleString()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <Button
+                                asChild
+                                size="sm"
+                                className="rounded-full bg-[#6b21a8] text-white hover:bg-[#581c87] shadow-md shadow-purple-600/10 font-bold px-4 py-2.5 text-xs transition-transform hover:-translate-y-0.5 shrink-0"
+                              >
+                                <Link 
+                                  to={c.slug ? `/checkout/${c.slug}` : "/courses"}
+                                  onClick={() => {
+                                    if (c.slug) {
+                                      trackMetaEvent("AddToCart", {
+                                        content_name: c.title,
+                                        content_category: c.category,
+                                        content_ids: [c.key],
+                                        content_type: "product",
+                                        value: pricing.price,
+                                        currency: "INR",
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Add to Cart
+                                </Link>
+                              </Button>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </article>
                   </Reveal>

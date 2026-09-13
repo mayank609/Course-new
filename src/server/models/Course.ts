@@ -9,6 +9,7 @@ const courseSchema = new mongoose.Schema(
     level: { type: String, default: "All Levels" },
     durationHours: { type: Number, default: 8 },
     price: { type: Number, default: 0 },
+    originalPrice: { type: Number, default: 0 },
     currency: { type: String, default: "USD" },
     enrolledCount: { type: Number, default: 0 },
     shortDescription: { type: String, default: "" },

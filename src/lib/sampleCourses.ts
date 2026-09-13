@@ -6,6 +6,7 @@ export type SampleCourse = {
   enrolledCount: number;
   slug?: string;
   price?: number;
+  originalPrice?: number;
   imageUrl?: string;
 };
 
@@ -19,6 +20,7 @@ export const sampleCourses: SampleCourse[] = [
     enrolledCount: 1420,
     slug: "excel-essentials",
     price: 499,
+    originalPrice: 1999,
   },
   {
     title: "Advanced Excel Mastery Course with AI & Real-Life Projects",
@@ -28,6 +30,7 @@ export const sampleCourses: SampleCourse[] = [
     enrolledCount: 2890,
     slug: "excel-mastery",
     price: 999,
+    originalPrice: 3499,
   },
   {
     title: "MS Word & PowerPoint Essentials with AI Course",
@@ -37,6 +40,7 @@ export const sampleCourses: SampleCourse[] = [
     enrolledCount: 940,
     slug: "word-ppt-essentials",
     price: 499,
+    originalPrice: 1999,
   },
   {
     title: "Advance MS Word & Powerpoint Mastery + AI Course",
@@ -46,5 +50,6 @@ export const sampleCourses: SampleCourse[] = [
     enrolledCount: 1240,
     slug: "word-ppt-mastery",
     price: 999,
+    originalPrice: 3499,
   },
 ];

@@ -17,6 +17,7 @@ export type Course = {
   level: string;
   durationHours: number;
   price: number;
+  originalPrice?: number;
   currency: string;
   enrolledCount: number;
   shortDescription: string;

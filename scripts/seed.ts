@@ -23,6 +23,7 @@ const courses = [
     enrolledCount: 1540,
     durationHours: 12,
     price: 499,
+    originalPrice: 1999,
     shortDescription: "Master the essentials of Microsoft Excel from scratch. Learn cells, basic formulas, formatting, and data management.",
     description: "This course is designed to take you from absolute zero to a confident Excel user. Perfect for students and entry-level professionals who want to understand spreadsheets, create basic tables, write arithmetic formulas, and organize data efficiently.",
     highlights: [
@@ -59,6 +60,7 @@ const courses = [
     enrolledCount: 2310,
     durationHours: 24,
     price: 999,
+    originalPrice: 3499,
     shortDescription: "Go beyond the basics. Master Advanced Formulas, Pivot Tables, Macros, and Business Dashboards.",
     description: "Unlock the true power of Excel. Taught by Microsoft Certified Trainers, this course covers complex lookups (XLOOKUP, VLOOKUP, INDEX/MATCH), nested conditions, data analysis tools, interactive pivot reports, dynamic charting, and automation to help you stand out in the workplace.",
     highlights: [
@@ -94,6 +96,7 @@ const courses = [
     enrolledCount: 890,
     durationHours: 10,
     price: 499,
+    originalPrice: 1999,
     shortDescription: "Build professional documents and engaging presentations quickly with the help of AI tools.",
     description: "Master document formatting, layouts, and style guides in Word, alongside slide design, layout hierarchy, animations, and transitions in PowerPoint. Learn to leverage AI prompts (ChatGPT, Claude) to draft templates and outlines instantly.",
     highlights: [
@@ -130,6 +133,7 @@ const courses = [
     enrolledCount: 1120,
     durationHours: 20,
     price: 999,
+    originalPrice: 3499,
     shortDescription: "Advanced report creation, master templates, and high-impact presentations boosted by AI.",
     description: "Learn to design complex corporate reports, handle mail merge, create developer-level forms, build customized slide masters, and harness Microsoft Copilot and ChatGPT for total document and presentation automation.",
     highlights: [

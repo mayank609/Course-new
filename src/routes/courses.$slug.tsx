@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
-import { Clock, Users, CheckCircle2, ArrowLeft, Award, Flame, Sparkles, TrendingUp, ChevronDown, PlayCircle, Lock, BookOpen } from "lucide-react";
+import { Clock, Users, CheckCircle2, ArrowLeft, Award, Flame, Sparkles, TrendingUp, ChevronDown, PlayCircle, Lock, BookOpen, Zap, ShoppingCart } from "lucide-react";
+import { toast } from "sonner";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { useAdviserModal } from "@/components/site/AdviserModal";
 import { fetchCourse } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
 import { getCourseModules, flattenLessons } from "@/lib/courseModules";
+import { getCoursePricing } from "@/lib/coursePricing";
 
 export function getTagBadge(tag: string) {
   const t = tag.toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -176,14 +178,39 @@ function CourseDetailPage() {
               </div>
 
               <div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-card)] sticky top-24 space-y-5">
-                <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Course Fee
-                  </div>
-                  <div className="font-serif text-3xl font-bold text-primary mt-1">
-                    {course.price > 0 ? `₹${course.price}` : "Free"}
-                  </div>
-                </div>
+                {(() => {
+                  const pricing = getCoursePricing(course.price, course.originalPrice);
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Course Fee
+                        </span>
+                        {pricing.hasDiscount && (
+                          <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-full">
+                            {pricing.discountPercent}% OFF
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-baseline gap-3 mt-2">
+                        <div className="font-serif text-3xl sm:text-4xl font-extrabold text-primary">
+                          {pricing.price > 0 ? `₹${pricing.price.toLocaleString()}` : "Free"}
+                        </div>
+                        {pricing.hasDiscount && (
+                          <div className="text-lg text-muted-foreground line-through font-semibold">
+                            ₹{pricing.originalPrice.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      {pricing.hasDiscount && (
+                        <div className="mt-2 text-xs text-emerald-600 font-bold flex items-center gap-1.5">
+                          <span>✓</span>
+                          <span>You save ₹{pricing.savings.toLocaleString()} (Special Offer Applied)</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {hasPurchased ? (
                   <Button
@@ -193,26 +220,55 @@ function CourseDetailPage() {
                     <Link to="/dashboard">Go to Student Dashboard</Link>
                   </Button>
                 ) : (
-                  <Button
-                    asChild
-                    className="w-full rounded-full py-6 font-semibold shadow-[var(--shadow-elegant)] hover:-translate-y-0.5 transition-transform"
-                  >
-                    <Link 
-                      to={`/checkout/${course.slug}`}
-                      onClick={() => {
-                        trackMetaEvent("AddToCart", {
-                          content_name: course.title,
-                          content_category: course.category,
-                          content_ids: [course._id],
-                          content_type: "product",
-                          value: course.price,
-                          currency: "INR",
-                        });
-                      }}
+                  <div className="space-y-3">
+                    {/* Primary: Buy Now */}
+                    <Button
+                      asChild
+                      className="shine w-full rounded-full py-6 font-bold text-base bg-[image:var(--gradient-primary)] text-white shadow-[var(--shadow-elegant)] hover:-translate-y-0.5 hover:opacity-95 transition-all flex items-center justify-center gap-2"
                     >
-                      Add to Cart
-                    </Link>
-                  </Button>
+                      <Link 
+                        to={`/checkout/${course.slug}`}
+                        onClick={() => {
+                          trackMetaEvent("InitiateCheckout", {
+                            content_name: course.title,
+                            content_category: course.category,
+                            content_ids: [course._id],
+                            content_type: "product",
+                            value: course.price,
+                            currency: "INR",
+                          });
+                        }}
+                      >
+                        <Zap className="h-4 w-4 fill-current" />
+                        Buy Now
+                      </Link>
+                    </Button>
+
+                    {/* Secondary: Add to Cart */}
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="w-full rounded-full py-6 font-bold text-sm border-2 border-primary/40 text-primary hover:bg-primary/5 hover:border-primary hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Link 
+                        to={`/checkout/${course.slug}`}
+                        onClick={() => {
+                          toast.success("Course added to cart! Proceeding to checkout...");
+                          trackMetaEvent("AddToCart", {
+                            content_name: course.title,
+                            content_category: course.category,
+                            content_ids: [course._id],
+                            content_type: "product",
+                            value: course.price,
+                            currency: "INR",
+                          });
+                        }}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        Add to Cart
+                      </Link>
+                    </Button>
+                  </div>
                 )}
 
                 {course.syllabusUrl && (

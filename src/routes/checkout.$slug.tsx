@@ -12,6 +12,7 @@ import { getAttribution } from "@/lib/attribution";
 import { ShieldCheck, CreditCard, ArrowLeft, Loader2, CheckCircle2, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { getCoursePricing } from "@/lib/coursePricing";
 
 export const Route = createFileRoute("/checkout/$slug")({
   component: CheckoutPage,
@@ -428,10 +429,22 @@ function CheckoutPage() {
                 <h2 className="font-serif text-xl font-bold">Order Summary</h2>
 
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{course.title}</span>
-                    <span>₹{course.price}</span>
-                  </div>
+                  {(() => {
+                    const pricing = getCoursePricing(course.price, course.originalPrice);
+                    return (
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-muted-foreground">{course.title}</span>
+                        <div className="text-right shrink-0">
+                          <span className="font-semibold">₹{pricing.price}</span>
+                          {pricing.hasDiscount && (
+                            <span className="text-xs text-muted-foreground line-through ml-2 font-medium">
+                              ₹{pricing.originalPrice}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {selectedAddonCourses.map((rec) => (
                     <div key={rec.slug} className="flex justify-between">
                       <span className="text-muted-foreground truncate pr-2">{rec.title}</span>

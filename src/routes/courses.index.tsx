@@ -14,6 +14,7 @@ import { getCourseImage } from "@/lib/courseImages";
 import { sampleCourses } from "@/lib/sampleCourses";
 import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
+import { getCoursePricing } from "@/lib/coursePricing";
 
 export function getTagBadge(tag: string) {
   const t = tag.toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -225,6 +226,31 @@ function CoursesPage() {
                           {c.durationHours} hrs
                         </span>
                       </div>
+
+                      {/* Course Pricing (Offer & Cut Price) */}
+                      {(() => {
+                        const pricing = getCoursePricing(c.price || 499, c.originalPrice);
+                        return (
+                          <div className="mt-3 pt-3 border-t border-border flex items-baseline justify-between">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-lg font-extrabold text-primary">
+                                ₹{pricing.price.toLocaleString()}
+                              </span>
+                              {pricing.hasDiscount && (
+                                <span className="text-xs text-muted-foreground line-through font-semibold">
+                                  ₹{pricing.originalPrice.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                            {pricing.hasDiscount && (
+                              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                {pricing.discountPercent}% OFF
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       <div className="mt-4 flex gap-2 relative z-20">
                         <Button
                           asChild
