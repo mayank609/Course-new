@@ -21,7 +21,7 @@ const sections = [
   },
   {
     h: "How to request a refund",
-    p: "Email our support team from the address used to enrol, including your order details and reason for the request. Approved refunds are processed to the original payment method within 7–10 business days.",
+    p: "Email our support team at Info@sarvprathamanalytics.com from the address used to enrol, including your order details and reason for the request. Approved refunds are processed to the original payment method within 7–10 business days.",
   },
   {
     h: "Non-refundable items",
@@ -53,7 +53,11 @@ function RefundPolicyPage() {
             ))}
           </div>
           <p className="mt-10 text-sm text-muted-foreground">
-            Need help with a refund? Reach out via our{" "}
+            Need help with a refund? Reach out to{" "}
+            <a href="mailto:Info@sarvprathamanalytics.com" className="text-primary underline">
+              Info@sarvprathamanalytics.com
+            </a>{" "}
+            or via our{" "}
             <a href="/contact" className="text-primary underline">
               contact page
             </a>

@@ -28,7 +28,12 @@ function ContactPage() {
                 <span className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center text-primary">
                   <Mail className="h-4 w-4" />
                 </span>
-                info@prathamanalytics.com
+                <a
+                  href="mailto:Info@sarvprathamanalytics.com"
+                  className="hover:text-primary transition-colors font-medium"
+                >
+                  Info@sarvprathamanalytics.com
+                </a>
               </div>
               <div className="flex items-center gap-3">
                 <span className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center text-primary">

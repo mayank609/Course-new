@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Linkedin, Facebook, Instagram, Youtube } from "lucide-react";
+import { Linkedin, Facebook, Instagram, Youtube, Mail } from "lucide-react";
 
 const LINK_MAP: Record<string, string> = {
   "About Us": "/about",
@@ -107,6 +107,20 @@ export function Footer() {
                 className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold underline mt-0.5 inline-block"
               >
                 Join WhatsApp Group →
+              </a>
+            </div>
+          </div>
+
+          {/* Email Support */}
+          <div className="mt-3 p-3.5 bg-white/5 rounded-2xl border border-white/10 flex items-center gap-3">
+            <Mail className="h-4 w-4 text-[color:var(--brand-gold)] shrink-0" />
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-white/50 font-semibold">Email Us</p>
+              <a
+                href="mailto:Info@sarvprathamanalytics.com"
+                className="text-xs text-white/90 hover:text-white font-medium transition-colors break-all"
+              >
+                Info@sarvprathamanalytics.com
               </a>
             </div>
           </div>

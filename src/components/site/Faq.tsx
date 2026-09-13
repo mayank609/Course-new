@@ -36,7 +36,13 @@ export function Faq() {
             Frequently Asked Questions
           </h2>
           <p className="mt-2 text-muted-foreground">
-            Still have questions? Reach out to us anytime at <b>info@prathamanalytics.com</b>.
+            Still have questions? Reach out to us anytime at{" "}
+            <a
+              href="mailto:Info@sarvprathamanalytics.com"
+              className="font-semibold text-primary hover:underline"
+            >
+              Info@sarvprathamanalytics.com
+            </a>.
           </p>
         </Reveal>
 

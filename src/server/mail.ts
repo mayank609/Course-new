@@ -14,7 +14,7 @@ export async function sendEmail({ to, toName, subject, html }: SendEmailArgs): P
     return;
   }
 
-  const senderEmail = process.env.BREVO_SENDER_EMAIL || "no-reply@sarvpratham.com";
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || "Info@sarvprathamanalytics.com";
   const senderName = process.env.BREVO_SENDER_NAME || "Sarvpratham Analytics";
 
   const res = await fetch(BREVO_API_URL, {

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -55,6 +56,8 @@ const WELCOME_POPUP_KEY = "sarvpratham_adviser_welcome_shown";
 export function AdviserModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [courseTitle, setCourseTitle] = useState<string | undefined>();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isHomePage = pathname === "/" || pathname === "";
 
   // Existing students who've already purchased a course don't need the "talk to an adviser" pitch.
   const { data: student, isFetched: isStudentFetched } = useQuery({
@@ -80,6 +83,8 @@ export function AdviserModalProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    // Only automatically pop up the adviser modal on the home page
+    if (!isHomePage) return;
     if (!isStudentFetched || isExistingCustomer) return;
     if (sessionStorage.getItem(WELCOME_POPUP_KEY)) return;
     const timer = setTimeout(() => {
@@ -88,7 +93,14 @@ export function AdviserModalProvider({ children }: { children: ReactNode }) {
       setIsOpen(true);
     }, 1200);
     return () => clearTimeout(timer);
-  }, [isStudentFetched, isExistingCustomer]);
+  }, [isHomePage, isStudentFetched, isExistingCustomer]);
+
+  useEffect(() => {
+    // If the welcome popup was triggered and user navigates away from the home page, close it
+    if (!isHomePage && isOpen && !courseTitle) {
+      setIsOpen(false);
+    }
+  }, [isHomePage, isOpen, courseTitle]);
 
   return (
     <AdviserModalContext.Provider value={value}>

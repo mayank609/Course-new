@@ -61,7 +61,11 @@ function TermsPage() {
             ))}
           </div>
           <p className="mt-10 text-sm text-muted-foreground">
-            Questions about these terms? Reach out via our{" "}
+            Questions about these terms? Reach out at{" "}
+            <a href="mailto:Info@sarvprathamanalytics.com" className="text-primary underline">
+              Info@sarvprathamanalytics.com
+            </a>{" "}
+            or via our{" "}
             <a href="/contact" className="text-primary underline">
               contact page
             </a>

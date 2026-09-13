@@ -60,6 +60,10 @@ function PrivacyPolicyPage() {
             Questions about this policy? Reach out via our{" "}
             <a href="/contact" className="text-primary underline">
               contact page
+            </a>{" "}
+            or email us at{" "}
+            <a href="mailto:Info@sarvprathamanalytics.com" className="text-primary underline">
+              Info@sarvprathamanalytics.com
             </a>
             .
           </p>
