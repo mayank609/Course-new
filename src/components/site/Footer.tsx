@@ -1,23 +1,9 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Linkedin, Facebook, Instagram, Youtube, Mail } from "lucide-react";
-
-const LINK_MAP: Record<string, string> = {
-  "About Us": "/about",
-  "Contact Us": "/contact",
-  "Privacy Policy": "/privacy-policy",
-  "Terms & Conditions": "/terms",
-  "Refund Policy": "/refund-policy",
-  "MS Excel Essentials": "/courses/excel-essentials",
-  "Advanced Excel Mastery": "/courses/excel-mastery",
-  "Word & PPT Essentials": "/courses/word-ppt-essentials",
-  "Advanced Word & PPT Mastery": "/courses/word-ppt-mastery",
-  Home: "/",
-  "All Courses": "/courses",
-  "Student Login": "/login",
-  Register: "/register",
-};
-
-const CATEGORY_SEARCH: Record<string, string> = {};
+import { fetchCategories, fetchCourses } from "@/lib/api";
+import { sampleCourses } from "@/lib/sampleCourses";
+import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
 
 function ThreadsIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -28,6 +14,33 @@ function ThreadsIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export function Footer() {
+  const { data: dbCategories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => fetchCategories(),
+  });
+
+  const { data: courses } = useQuery({
+    queryKey: ["courses"],
+    queryFn: () => fetchCourses(),
+  });
+
+  const source =
+    courses && courses.length > 0
+      ? toDisplayCourses(courses)
+      : sampleToDisplayCourses(sampleCourses);
+
+  const categoriesFromCourses = source.map((c) => c.category).filter(Boolean);
+  const categoriesFromDb = dbCategories ? dbCategories.map((cat) => cat.name).filter(Boolean) : [];
+  
+  const dynamicCategories = Array.from(new Set([...categoriesFromDb, ...categoriesFromCourses]));
+  const defaultCategories = [
+    "Microsoft Office",
+    "Data & Productivity",
+    "AI & Automation",
+    "Business Skills",
+  ];
+  const categories = dynamicCategories.length > 0 ? dynamicCategories : defaultCategories;
+
   return (
     <footer className="bg-[color:var(--brand-dark)] text-white">
       <div className="mx-auto max-w-7xl px-4 py-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -130,45 +143,53 @@ export function Footer() {
         {[
           {
             h: "Quick Links",
-            l: ["About Us", "Contact Us", "Privacy Policy", "Terms & Conditions", "Refund Policy"],
-          },
-          {
-            h: "Featured Courses",
-            l: [
-              "MS Excel Essentials",
-              "Advanced Excel Mastery",
-              "Word & PPT Essentials",
-              "Advanced Word & PPT Mastery",
+            items: [
+              { label: "About Us", to: "/about", search: undefined },
+              { label: "Contact Us", to: "/contact", search: undefined },
+              { label: "Privacy Policy", to: "/privacy-policy", search: undefined },
+              { label: "Terms & Conditions", to: "/terms", search: undefined },
+              { label: "Refund Policy", to: "/refund-policy", search: undefined },
             ],
           },
-          { h: "Student Portal", l: ["Home", "All Courses", "Student Login", "Register"] },
+          {
+            h: "Course Categories",
+            items: categories.slice(0, 6).map((catName) => ({
+              label: catName,
+              to: "/courses",
+              search: { category: catName },
+            })),
+          },
+          {
+            h: "Student Portal",
+            items: [
+              { label: "Home", to: "/", search: undefined },
+              { label: "All Courses", to: "/courses", search: undefined },
+              { label: "Student Login", to: "/login", search: undefined },
+              { label: "Register", to: "/register", search: undefined },
+            ],
+          },
         ].map((c) => (
           <div key={c.h}>
             <div className="font-semibold uppercase tracking-[0.2em] text-xs text-[color:var(--brand-gold)]/80">
               {c.h}
             </div>
             <ul className="mt-4 space-y-2 text-sm text-white/70">
-              {c.l.map((x) =>
-                LINK_MAP[x] ? (
-                  <li key={x}>
-                    <Link
-                      to={LINK_MAP[x]}
-                      className="relative transition-colors hover:text-white after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-[color:var(--brand-gold)] after:transition-all after:duration-300 hover:after:w-full"
-                    >
-                      {x}
-                    </Link>
-                  </li>
-                ) : (
-                  <li key={x}>
-                    <a
-                      href="#"
-                      className="relative transition-colors hover:text-white after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-[color:var(--brand-gold)] after:transition-all after:duration-300 hover:after:w-full"
-                    >
-                      {x}
-                    </a>
-                  </li>
-                ),
-              )}
+              {c.items.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    to={item.to}
+                    search={item.search}
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                    className="relative transition-colors hover:text-white after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-[color:var(--brand-gold)] after:transition-all after:duration-300 hover:after:w-full"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         ))}
