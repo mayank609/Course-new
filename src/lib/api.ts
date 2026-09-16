@@ -33,6 +33,8 @@ export type Course = {
   imageUrl: string;
   syllabusUrl?: string;
   published: boolean;
+  showInFooter?: boolean;
+  footerOrder?: number;
 };
 
 export type LeadSource =

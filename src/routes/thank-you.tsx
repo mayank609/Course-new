@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Play, BookOpen, Sparkles } from "lucide-react";
+import { CheckCircle2, Play, BookOpen, Sparkles, Mail } from "lucide-react";
 import { z } from "zod";
 import { useEffect } from "react";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
@@ -12,6 +12,8 @@ const searchSchema = z.object({
   amount: z.number().optional().catch(undefined),
   currency: z.string().optional().catch("INR"),
   orderId: z.string().optional().catch(""),
+  guest: z.string().optional().catch(""),
+  loggedIn: z.string().optional().catch("1"),
 });
 
 export const Route = createFileRoute("/thank-you")({
@@ -20,7 +22,12 @@ export const Route = createFileRoute("/thank-you")({
 });
 
 function ThankYouPage() {
-  const { course, amount, currency, orderId } = Route.useSearch();
+  const { course, amount, currency, orderId, guest, loggedIn } = Route.useSearch();
+  const isGuest = guest === "1";
+  // The purchase matched an existing, already-activated account by email or
+  // phone — it's linked to that account, but this browser was never signed
+  // into it (no password was checked), so it needs a real login.
+  const needsLoginForExistingAccount = !isGuest && loggedIn === "0";
 
   useEffect(() => {
     // A Purchase without an order id cannot be deduplicated against the server
@@ -90,10 +97,30 @@ function ThankYouPage() {
             </div>
           )}
 
+          {isGuest && (
+            <div className="flex items-start gap-3 p-4 bg-amber-500/10 text-left rounded-2xl border border-amber-500/20">
+              <Mail className="h-4 w-4 text-[color:var(--brand-gold-foreground)] shrink-0 mt-0.5" />
+              <p className="text-xs text-foreground/80">
+                You're logged in for this session. We've also emailed and WhatsApp'd you an activation link — set a
+                password there so you can log in again anytime.
+              </p>
+            </div>
+          )}
+
+          {needsLoginForExistingAccount && (
+            <div className="flex items-start gap-3 p-4 bg-amber-500/10 text-left rounded-2xl border border-amber-500/20">
+              <Mail className="h-4 w-4 text-[color:var(--brand-gold-foreground)] shrink-0 mt-0.5" />
+              <p className="text-xs text-foreground/80">
+                This purchase is linked to an existing account under this email/phone. Please log in with that
+                account's password to access it.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3 pt-2">
             <Button asChild className="w-full rounded-full py-6 text-base font-semibold shadow-md">
-              <Link to="/dashboard">
-                <Play className="h-4 w-4 mr-2 fill-current" /> Go to My Dashboard
+              <Link to={needsLoginForExistingAccount ? "/login" : "/dashboard"} search={needsLoginForExistingAccount ? { redirect: "/dashboard" } : undefined}>
+                <Play className="h-4 w-4 mr-2 fill-current" /> {needsLoginForExistingAccount ? "Log In to Access" : "Go to My Dashboard"}
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full rounded-full py-6 text-base font-semibold">

@@ -1,3 +1,59 @@
+export async function sendWhatsAppActivationLink(
+  studentName: string,
+  studentPhone: string,
+  courseTitle: string,
+  activationUrl: string
+) {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!token || !phoneId) {
+    console.log("WhatsApp: Credentials are not fully configured in environment (.env).");
+    return;
+  }
+
+  let formattedPhone = studentPhone.replace(/\D/g, "");
+  if (formattedPhone.length === 10) {
+    formattedPhone = "91" + formattedPhone;
+  }
+  if (!formattedPhone) {
+    console.log("WhatsApp: Student phone number is empty or invalid. Skipping.");
+    return;
+  }
+
+  const url = `https://graph.facebook.com/v20.0/${phoneId}/messages`;
+  const bodyText = `Hi ${studentName}, thank you for purchasing ${courseTitle} from Sarvpratham Analytics!
+
+Your course is unlocked and ready to access right away.
+
+To save your account for next time, set a password here: ${activationUrl}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: formattedPhone,
+        type: "text",
+        text: { preview_url: true, body: bodyText },
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      console.error("WhatsApp: Activation link text message failed. Response:", data);
+    } else {
+      console.log("WhatsApp: Activation link sent successfully:", data);
+    }
+  } catch (error) {
+    console.error("WhatsApp: Network or connection error sending activation link:", error);
+  }
+}
+
 export async function sendWhatsAppPurchaseNotification(
   studentName: string,
   studentPhone: string,

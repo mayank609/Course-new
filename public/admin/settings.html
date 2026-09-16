@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Site Settings — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html">Dashboard</a>
+    <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/cart-tracking.html">Cart & Checkout</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/students.html">Students</a>
+    <a href="/admin/courses.html">Courses</a>
+    <a href="/admin/categories.html">Categories</a>
+    <a href="/admin/coupons.html">Coupons</a>
+    <a href="/admin/testimonials.html">Testimonials</a>
+    <a href="/admin/settings.html" class="active">Site Settings</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main" style="max-width: 640px">
+    <h1>Site Settings</h1>
+    <p class="subtitle">Homepage YouTube video and other site-wide settings — no developer needed</p>
+
+    <form id="settings-form" style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:16px">
+      <div>
+        <label style="display:block;font-weight:600;font-size:0.85rem;margin-bottom:6px">Homepage Demo Video (YouTube link)</label>
+        <input type="text" name="youtubeVideoUrl" placeholder="https://www.youtube.com/watch?v=..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px" />
+        <p class="subtitle" style="margin:6px 0 0;font-size:0.78rem">Paste any YouTube video link. Leave empty to hide the homepage video section entirely.</p>
+      </div>
+      <div>
+        <label style="display:block;font-weight:600;font-size:0.85rem;margin-bottom:6px">YouTube Channel Link</label>
+        <input type="text" name="youtubeChannelUrl" placeholder="https://www.youtube.com/@SarvprathamAnalytics" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px" />
+      </div>
+      <div class="error-msg" id="form-error"></div>
+      <div id="form-success" style="color:#166534;font-size:0.85rem;display:none">Saved successfully.</div>
+      <button type="submit" class="btn-gold" style="padding:10px 20px;align-self:flex-start">Save Settings</button>
+    </form>
+  </main>
+</div>
+<script src="/admin/admin.js"></script>
+<script>
+  const form = document.getElementById("settings-form");
+
+  async function load() {
+    const settings = await api("/site-settings");
+    form.elements.youtubeVideoUrl.value = settings.youtubeVideoUrl || "";
+    form.elements.youtubeChannelUrl.value = settings.youtubeChannelUrl || "";
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    document.getElementById("form-error").textContent = "";
+    document.getElementById("form-success").style.display = "none";
+    const data = Object.fromEntries(new FormData(form).entries());
+    try {
+      await api("/site-settings", { method: "PUT", body: JSON.stringify(data) });
+      document.getElementById("form-success").style.display = "block";
+    } catch (err) {
+      document.getElementById("form-error").textContent = err.message;
+    }
+  });
+
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    await load();
+  })();
+</script>
+</body>
+</html>

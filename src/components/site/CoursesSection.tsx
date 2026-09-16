@@ -12,6 +12,7 @@ import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
 import { toDirectImageUrl } from "@/lib/imageUrl";
 import { getCoursePricing } from "@/lib/coursePricing";
+import { trackCartEvent } from "@/lib/cartTracking";
 
 function getDefaultCourseIcon(title: string): string {
   const t = title.toLowerCase();
@@ -302,6 +303,11 @@ export function CoursesSection() {
                                         content_type: "product",
                                         value: pricing.price,
                                         currency: "INR",
+                                      });
+                                      trackCartEvent("add_to_cart", {
+                                        courseSlug: c.slug,
+                                        courseTitle: c.title,
+                                        amount: pricing.price,
                                       });
                                     }
                                   }}

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cart & Checkout Tracking — Sarvpratham Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand" style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+      <img src="/sarvpratham-logo.png" style="max-height: 48px; background: white; border-radius: 8px; padding: 6px; margin-bottom: 10px;" alt="Sarvpratham logo" />
+      <span style="font-size: 0.9rem; color: #fff;">Admin Console</span>
+    </div>
+    <a href="/admin/index.html">Dashboard</a>
+    <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/cart-tracking.html" class="active">Cart & Checkout</a>
+    <a href="/admin/leads.html">Leads</a>
+    <a href="/admin/students.html">Students</a>
+    <a href="/admin/courses.html">Courses</a>
+    <a href="/admin/categories.html">Categories</a>
+    <a href="/admin/coupons.html">Coupons</a>
+    <a href="/admin/testimonials.html">Testimonials</a>
+    <a href="/admin/settings.html">Site Settings</a>
+    <a href="#" data-logout class="logout">Log out</a>
+  </aside>
+  <main class="main" style="max-width: 1400px">
+    <h1>Cart & Checkout Tracking</h1>
+    <p class="subtitle">Every visitor who added a course to their cart, where they are in checkout, and who abandoned before paying</p>
+
+    <div class="stats" style="grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: 20px;">
+      <div class="stat-card"><div class="n" id="stat-total">—</div><div class="l">Total Carts</div></div>
+      <div class="stat-card"><div class="n" id="stat-checkout-started">—</div><div class="l">Checkout Started</div></div>
+      <div class="stat-card"><div class="n" id="stat-payment-pending">—</div><div class="l">Payment Pending / Failed</div></div>
+      <div class="stat-card"><div class="n" id="stat-completed">—</div><div class="l">Purchase Completed</div></div>
+      <div class="stat-card"><div class="n" id="stat-abandoned">—</div><div class="l">Abandoned</div></div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <select id="status-filter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; font-weight: 600;">
+          <option value="">All statuses</option>
+          <option value="Added to Cart">Added to Cart</option>
+          <option value="Checkout Started">Checkout Started</option>
+          <option value="Payment Pending">Payment Pending</option>
+          <option value="Payment Failed">Payment Failed</option>
+          <option value="Purchase Completed">Purchase Completed</option>
+          <option value="__abandoned">Abandoned (30+ min inactive)</option>
+        </select>
+        <select id="source-filter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; font-weight: 600;">
+          <option value="">All sources</option>
+        </select>
+        <input type="date" id="start-date" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;" />
+        <input type="date" id="end-date" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;" />
+        <button id="apply-dates" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: 600;">Apply</button>
+      </div>
+      <button id="btn-export" class="btn-ghost" style="padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Export CSV</button>
+    </div>
+
+    <div id="table-wrap"></div>
+  </main>
+</div>
+<script src="/admin/admin.js"></script>
+<script>
+  const ABANDON_AFTER_MS = 30 * 60 * 1000; // 30 minutes of inactivity on a non-final status
+  const FOLLOW_UP_OPTIONS = ["", "Not Contacted", "Contacted", "Not Interested", "Converted"];
+
+  let rows = [];
+  let statusFilter = "";
+  let sourceFilter = "";
+
+  function isAbandoned(row) {
+    if (row.status === "Purchase Completed") return false;
+    return Date.now() - new Date(row.lastActivityAt).getTime() > ABANDON_AFTER_MS;
+  }
+
+  function statusBadge(row) {
+    if (isAbandoned(row)) {
+      return `<span class="badge" style="background:#fee2e2;color:#991b1b;font-weight:700">Abandoned</span>`;
+    }
+    const style = {
+      "Added to Cart": "background:#e0f2fe;color:#075985",
+      "Checkout Started": "background:#fef9c3;color:#854d0e",
+      "Payment Pending": "background:#fef3c7;color:#92400e",
+      "Payment Failed": "background:#fee2e2;color:#991b1b",
+      "Purchase Completed": "background:#dcfce7;color:#166534",
+    }[row.status] || "background:#f1f5f9;color:#475569";
+    return `<span class="badge" style="${style};font-weight:700">${escapeHtml(row.status)}</span>`;
+  }
+
+  function populateSourceFilter() {
+    const select = document.getElementById("source-filter");
+    const sources = Array.from(new Set(rows.map((r) => r.source || "Direct / Website"))).sort();
+    const current = sourceFilter;
+    select.innerHTML =
+      `<option value="">All sources</option>` +
+      sources.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    select.value = current;
+  }
+
+  function renderStats() {
+    document.getElementById("stat-total").textContent = rows.length;
+    document.getElementById("stat-checkout-started").textContent = rows.filter((r) => r.status === "Checkout Started").length;
+    document.getElementById("stat-payment-pending").textContent = rows.filter((r) => r.status === "Payment Pending" || r.status === "Payment Failed").length;
+    document.getElementById("stat-completed").textContent = rows.filter((r) => r.status === "Purchase Completed").length;
+    document.getElementById("stat-abandoned").textContent = rows.filter(isAbandoned).length;
+  }
+
+  function render() {
+    populateSourceFilter();
+    renderStats();
+
+    const wrap = document.getElementById("table-wrap");
+
+    let filtered = rows;
+    if (statusFilter === "__abandoned") {
+      filtered = filtered.filter(isAbandoned);
+    } else if (statusFilter) {
+      filtered = filtered.filter((r) => r.status === statusFilter);
+    }
+    filtered = sourceFilter ? filtered.filter((r) => (r.source || "Direct / Website") === sourceFilter) : filtered;
+
+    if (rows.length === 0) {
+      wrap.innerHTML = `<div class="empty">No cart activity recorded yet.</div>`;
+      return;
+    }
+    if (filtered.length === 0) {
+      wrap.innerHTML = `<div class="empty">No activity matches this filter.</div>`;
+      return;
+    }
+
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Customer</th><th>Course</th><th>Amount</th><th>Location</th><th>Source</th><th>Status</th><th>Last Activity</th><th>Follow-up</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${filtered.map((r) => `
+            <tr data-id="${r._id}">
+              <td>
+                <div style="font-weight:600">${escapeHtml(r.name) || '<span class="muted italic">Unknown visitor</span>'}</div>
+                ${r.email ? `<div class="muted" style="font-size:0.78rem">${escapeHtml(r.email)}</div>` : ""}
+                ${r.phone ? `<div class="muted" style="font-size:0.78rem">📞 ${escapeHtml(r.phone)}</div>` : ""}
+              </td>
+              <td class="muted">${escapeHtml(r.courseTitle || r.courseSlug)}</td>
+              <td style="font-weight:600">₹${r.amount || 0}</td>
+              <td>${r.city || r.state ? `${escapeHtml(r.city || "")}${r.city && r.state ? ", " : ""}${escapeHtml(r.state || "")}` : '<span class="muted italic">&mdash;</span>'}</td>
+              <td class="muted" style="white-space:nowrap">${escapeHtml(r.source || "Direct / Website")}</td>
+              <td>${statusBadge(r)}</td>
+              <td class="muted" style="white-space:nowrap">${new Date(r.lastActivityAt).toLocaleString()}</td>
+              <td>
+                <select data-followup="${r._id}" style="padding:4px 6px;border-radius:6px;font-size:0.78rem">
+                  ${FOLLOW_UP_OPTIONS.map((opt) => `<option value="${escapeHtml(opt)}" ${r.followUpStatus === opt ? "selected" : ""}>${opt || "—"}</option>`).join("")}
+                </select>
+              </td>
+              <td><button class="btn-danger btn-sm" data-delete="${r._id}">Delete</button></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+
+    wrap.querySelectorAll("[data-followup]").forEach((select) => {
+      select.addEventListener("change", async (e) => {
+        const id = e.target.dataset.followup;
+        try {
+          await api(`/cart-activity/${id}`, { method: "PATCH", body: JSON.stringify({ followUpStatus: e.target.value }) });
+          const row = rows.find((r) => r._id === id);
+          if (row) row.followUpStatus = e.target.value;
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
+
+    wrap.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this cart tracking record?")) return;
+        await api(`/cart-activity/${btn.dataset.delete}`, { method: "DELETE" });
+        await load();
+      });
+    });
+  }
+
+  async function load() {
+    const startDate = document.getElementById("start-date").value;
+    const endDate = document.getElementById("end-date").value;
+    const params = new URLSearchParams();
+    if (startDate) params.set("startDate", startDate);
+    if (endDate) params.set("endDate", endDate);
+    rows = await api(`/cart-activity?${params.toString()}`);
+    render();
+  }
+
+  (async () => {
+    await requireAuth();
+    wireLogout();
+    document.getElementById("status-filter").addEventListener("change", (e) => {
+      statusFilter = e.target.value;
+      render();
+    });
+    document.getElementById("source-filter").addEventListener("change", (e) => {
+      sourceFilter = e.target.value;
+      render();
+    });
+    document.getElementById("apply-dates").addEventListener("click", load);
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const headers = [
+        { key: "name", label: "Customer Name" },
+        { key: "phone", label: "Mobile Number" },
+        { key: "email", label: "Email" },
+        { key: "courseTitle", label: "Course Name" },
+        { key: "amount", label: "Cart Amount" },
+        { key: "state", label: "State" },
+        { key: "city", label: "City" },
+        { key: "source", label: "Source" },
+        { key: "status", label: "Status" },
+        { key: "followUpStatus", label: "Follow-up Status" },
+        { key: "createdAt", label: "Added to Cart At" },
+        { key: "lastActivityAt", label: "Last Activity At" },
+      ];
+      let toExport = rows;
+      if (statusFilter === "__abandoned") toExport = toExport.filter(isAbandoned);
+      else if (statusFilter) toExport = toExport.filter((r) => r.status === statusFilter);
+      toExport = sourceFilter ? toExport.filter((r) => (r.source || "Direct / Website") === sourceFilter) : toExport;
+      downloadCSV(toExport, `cart-tracking_${statusFilter || "all"}.csv`, headers);
+    });
+    await load();
+  })();
+</script>
+</body>
+</html>

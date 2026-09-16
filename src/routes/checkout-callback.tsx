@@ -55,6 +55,8 @@ function CheckoutCallbackPage() {
                   amount: typeof data.amount === "number" ? data.amount : undefined,
                   currency: data.currency || "INR",
                   orderId: data.orderId || order_id,
+                  guest: data.isGuestPurchase ? "1" : undefined,
+                  loggedIn: data.loggedIn ? "1" : "0",
                 },
               });
             }

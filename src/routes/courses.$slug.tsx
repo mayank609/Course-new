@@ -15,6 +15,8 @@ import { fetchCourse } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
 import { getCourseModules, flattenLessons } from "@/lib/courseModules";
 import { getCoursePricing } from "@/lib/coursePricing";
+import { trackCartEvent } from "@/lib/cartTracking";
+import { RecommendedCourses } from "@/components/site/RecommendedCourses";
 
 export function getTagBadge(tag: string) {
   const t = tag.toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -250,7 +252,7 @@ function CourseDetailPage() {
                       variant="outline"
                       className="w-full rounded-full py-6 font-bold text-sm border-2 border-primary/40 text-primary hover:bg-primary/5 hover:border-primary hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                     >
-                      <Link 
+                      <Link
                         to={`/checkout/${course.slug}`}
                         onClick={() => {
                           toast.success("Course added to cart! Proceeding to checkout...");
@@ -261,6 +263,11 @@ function CourseDetailPage() {
                             content_type: "product",
                             value: course.price,
                             currency: "INR",
+                          });
+                          trackCartEvent("add_to_cart", {
+                            courseSlug: course.slug,
+                            courseTitle: course.title,
+                            amount: course.price,
                           });
                         }}
                       >
@@ -296,6 +303,10 @@ function CourseDetailPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {course && course.recommendedCourseDetails && course.recommendedCourseDetails.length > 0 && (
+            <RecommendedCourses courses={course.recommendedCourseDetails} />
           )}
         </div>
       </main>
