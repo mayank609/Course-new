@@ -1,9 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Linkedin, Facebook, Instagram, Youtube, Mail } from "lucide-react";
-import { fetchCategories, fetchCourses } from "@/lib/api";
-import { sampleCourses } from "@/lib/sampleCourses";
-import { toDisplayCourses, sampleToDisplayCourses } from "@/lib/displayCourse";
+import { fetchCourses } from "@/lib/api";
 
 function ThreadsIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -14,32 +12,18 @@ function ThreadsIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export function Footer() {
-  const { data: dbCategories } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => fetchCategories(),
-  });
-
   const { data: courses } = useQuery({
     queryKey: ["courses"],
     queryFn: () => fetchCourses(),
   });
 
-  const source =
-    courses && courses.length > 0
-      ? toDisplayCourses(courses)
-      : sampleToDisplayCourses(sampleCourses);
-
-  const categoriesFromCourses = source.map((c) => c.category).filter(Boolean);
-  const categoriesFromDb = dbCategories ? dbCategories.map((cat) => cat.name).filter(Boolean) : [];
-  
-  const dynamicCategories = Array.from(new Set([...categoriesFromDb, ...categoriesFromCourses]));
-  const defaultCategories = [
-    "Microsoft Office",
-    "Data & Productivity",
-    "AI & Automation",
-    "Business Skills",
-  ];
-  const categories = dynamicCategories.length > 0 ? dynamicCategories : defaultCategories;
+  // Only real, published courses the admin has opted into the footer — never
+  // hard-coded names/links, so a deleted or unpublished course disappears
+  // automatically and a new one shows up without a code change.
+  const footerCourses = (courses ?? [])
+    .filter((c) => c.slug && c.showInFooter !== false)
+    .sort((a, b) => (a.footerOrder ?? 0) - (b.footerOrder ?? 0))
+    .slice(0, 6);
 
   return (
     <footer className="bg-[color:var(--brand-dark)] text-white">
@@ -152,12 +136,15 @@ export function Footer() {
             ],
           },
           {
-            h: "Course Categories",
-            items: categories.slice(0, 6).map((catName) => ({
-              label: catName,
-              to: "/courses",
-              search: { category: catName },
-            })),
+            h: "Popular Courses",
+            items:
+              footerCourses.length > 0
+                ? footerCourses.map((c) => ({
+                    label: c.title,
+                    to: `/courses/${c.slug}`,
+                    search: undefined,
+                  }))
+                : [{ label: "Browse All Courses", to: "/courses", search: undefined }],
           },
           {
             h: "Student Portal",

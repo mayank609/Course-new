@@ -15,6 +15,7 @@ const purchaseSchema = new mongoose.Schema(
     currency: { type: String, default: "INR" },
     status: { type: String, default: "completed" }, // "completed", "pending", "failed"
     paymentId: { type: String, required: true },
+    isGuestPurchase: { type: Boolean, default: false },
     couponCode: { type: String, default: "" },
     discountAmount: { type: Number, default: 0 },
     source: { type: String, default: "Direct / Website" },

@@ -39,6 +39,12 @@
       margin-top: 0;
     }
   }
+  .quick-range { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
+  .quick-range.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .location-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
+  @media (max-width: 900px) {
+    .location-tables { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -50,12 +56,14 @@
     </div>
     <a href="/admin/index.html" class="active">Dashboard</a>
     <a href="/admin/purchases.html">Purchases</a>
+    <a href="/admin/cart-tracking.html">Cart & Checkout</a>
     <a href="/admin/leads.html">Leads</a>
     <a href="/admin/students.html">Students</a>
     <a href="/admin/courses.html">Courses</a>
     <a href="/admin/categories.html">Categories</a>
     <a href="/admin/coupons.html">Coupons</a>
     <a href="/admin/testimonials.html">Testimonials</a>
+    <a href="/admin/settings.html">Site Settings</a>
     <a href="#" data-logout class="logout">Log out</a>
   </aside>
   <main class="main">
@@ -63,6 +71,11 @@
     <p class="subtitle">Overview of purchases, revenue, leads, and students</p>
 
     <!-- Date Filter Toolbar -->
+    <div class="toolbar" style="margin-bottom: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <button class="quick-range" data-range="today">Today</button>
+      <button class="quick-range" data-range="7d">Last 7 Days</button>
+      <button class="quick-range" data-range="30d">Last 30 Days</button>
+    </div>
     <div class="toolbar" style="margin-bottom: 25px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
       <div style="display: flex; gap: 8px; align-items: center;">
         <label style="font-weight:600;font-size:0.85rem;color:var(--navy)">Start Date:</label>
@@ -72,10 +85,16 @@
         <label style="font-weight:600;font-size:0.85rem;color:var(--navy)">End Date:</label>
         <input type="date" id="end-date" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;" />
       </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <label style="font-weight:600;font-size:0.85rem;color:var(--navy)">Course:</label>
+        <select id="course-filter" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;">
+          <option value="">All Courses</option>
+        </select>
+      </div>
       <button class="btn-gold" id="apply-filter" style="padding: 6px 16px;">Apply Filter</button>
       <button class="btn-ghost" id="clear-filter" style="padding: 6px 12px; display: none;">Clear</button>
     </div>
-    
+
     <div class="stats" id="stats">
       <div class="stat-card"><div class="n" id="stat-leads">—</div><div class="l">Total Leads</div></div>
       <div class="stat-card"><div class="n" id="stat-new-leads">—</div><div class="l">New Leads</div></div>
@@ -104,8 +123,36 @@
       </div>
     </div>
 
+    <!-- Location-wise Sales Analytics -->
+    <div class="chart-container">
+      <h3 style="margin-bottom:4px;font-family:serif;font-size:1.15rem;color:var(--navy)">Location-wise Sales</h3>
+      <p class="subtitle" style="margin-bottom:15px;font-size:0.8rem">Which states and cities are driving orders and revenue, for the selected filters above</p>
+
+      <div class="stats" style="grid-template-columns: repeat(2, minmax(0,1fr)); margin-bottom: 20px;">
+        <div class="stat-card">
+          <div class="n" id="top-state" style="font-size:1.3rem">—</div>
+          <div class="l">Top State by Revenue</div>
+        </div>
+        <div class="stat-card">
+          <div class="n" id="top-city" style="font-size:1.3rem">—</div>
+          <div class="l">Top City by Revenue</div>
+        </div>
+      </div>
+
+      <div class="location-tables">
+        <div>
+          <h4 style="margin:0 0 8px;font-size:0.9rem;color:var(--navy)">State-wise</h4>
+          <div id="state-table-wrap"></div>
+        </div>
+        <div>
+          <h4 style="margin:0 0 8px;font-size:0.9rem;color:var(--navy)">City-wise</h4>
+          <div id="city-table-wrap"></div>
+        </div>
+      </div>
+    </div>
+
     <p class="subtitle" style="margin-top:24px">
-      Head to <a href="/admin/purchases.html" style="color:var(--navy);font-weight:600;text-decoration:underline">Purchases</a> to monitor student buying, 
+      Head to <a href="/admin/purchases.html" style="color:var(--navy);font-weight:600;text-decoration:underline">Purchases</a> to monitor student buying,
       <a href="/admin/leads.html" style="color:var(--navy);font-weight:600;text-decoration:underline">Leads</a> to follow up on enquiries, or 
       <a href="/admin/students.html" style="color:var(--navy);font-weight:600;text-decoration:underline">Students</a> to manage account directories.
     </p>
@@ -118,16 +165,82 @@
   let revenueChartInstance = null;
   let salesChartInstance = null;
 
+  function renderLocationTable(wrapId, rows, nameKey, extra) {
+    const wrap = document.getElementById(wrapId);
+    if (!rows || rows.length === 0) {
+      wrap.innerHTML = `<div class="empty" style="padding:16px">No location data yet.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr><th>${extra ? "City (State)" : "State"}</th><th>Orders</th><th>Revenue</th></tr></thead>
+        <tbody>
+          ${rows.slice(0, 15).map((r) => `
+            <tr>
+              <td style="font-weight:600">${escapeHtml(r[nameKey])}${extra && r.state ? ` <span class="muted" style="font-weight:400">(${escapeHtml(r.state)})</span>` : ""}</td>
+              <td>${r.orders}</td>
+              <td>₹${(r.revenue || 0).toLocaleString()}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  async function populateCourseFilter() {
+    const select = document.getElementById("course-filter");
+    if (select.dataset.loaded) return;
+    try {
+      const courses = await api("/courses");
+      select.innerHTML =
+        `<option value="">All Courses</option>` +
+        courses.map((c) => `<option value="${escapeHtml(c.slug)}">${escapeHtml(c.title)}</option>`).join("");
+      select.dataset.loaded = "1";
+    } catch {
+      // non-critical — filter just stays at "All Courses"
+    }
+  }
+
+  function setQuickRange(range) {
+    const now = new Date();
+    const fmt = (d) => d.toISOString().slice(0, 10);
+    const end = fmt(now);
+    let start = end;
+    if (range === "7d") {
+      const d = new Date(now); d.setDate(d.getDate() - 6); start = fmt(d);
+    } else if (range === "30d") {
+      const d = new Date(now); d.setDate(d.getDate() - 29); start = fmt(d);
+    }
+    document.getElementById("start-date").value = start;
+    document.getElementById("end-date").value = end;
+    document.querySelectorAll(".quick-range").forEach((btn) => btn.classList.toggle("active", btn.dataset.range === range));
+    loadStats();
+  }
+
   async function loadStats() {
     const startDate = document.getElementById("start-date").value;
     const endDate = document.getElementById("end-date").value;
+    const courseSlug = document.getElementById("course-filter").value;
 
     const params = new URLSearchParams();
     if (startDate) params.set("startDate", startDate);
     if (endDate) params.set("endDate", endDate);
+    if (courseSlug) params.set("courseSlug", courseSlug);
 
     const stats = await api(`/stats?${params.toString()}`);
-    
+
+    // Location-wise breakdown
+    const stateBreakdown = stats.stateBreakdown || [];
+    const cityBreakdown = stats.cityBreakdown || [];
+    document.getElementById("top-state").textContent = stateBreakdown[0]
+      ? `${stateBreakdown[0].state} (₹${stateBreakdown[0].revenue.toLocaleString()})`
+      : "—";
+    document.getElementById("top-city").textContent = cityBreakdown[0]
+      ? `${cityBreakdown[0].city} (₹${cityBreakdown[0].revenue.toLocaleString()})`
+      : "—";
+    renderLocationTable("state-table-wrap", stateBreakdown, "state", false);
+    renderLocationTable("city-table-wrap", cityBreakdown, "city", true);
+
     // Populate cards
     document.getElementById("stat-leads").textContent = stats.leadCount;
     document.getElementById("stat-new-leads").textContent = stats.newLeadCount;
@@ -139,7 +252,7 @@
 
     // Show/hide clear button
     const clearBtn = document.getElementById("clear-filter");
-    if (startDate || endDate) {
+    if (startDate || endDate || courseSlug) {
       clearBtn.style.display = "inline-block";
     } else {
       clearBtn.style.display = "none";
@@ -234,12 +347,21 @@
   (async () => {
     await requireAuth();
     wireLogout();
-    
-    document.getElementById("apply-filter").addEventListener("click", loadStats);
+    await populateCourseFilter();
+
+    document.getElementById("apply-filter").addEventListener("click", () => {
+      document.querySelectorAll(".quick-range").forEach((btn) => btn.classList.remove("active"));
+      loadStats();
+    });
     document.getElementById("clear-filter").addEventListener("click", () => {
       document.getElementById("start-date").value = "";
       document.getElementById("end-date").value = "";
+      document.getElementById("course-filter").value = "";
+      document.querySelectorAll(".quick-range").forEach((btn) => btn.classList.remove("active"));
       loadStats();
+    });
+    document.querySelectorAll(".quick-range").forEach((btn) => {
+      btn.addEventListener("click", () => setQuickRange(btn.dataset.range));
     });
 
     await loadStats();

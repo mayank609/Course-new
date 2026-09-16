@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
@@ -9,7 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fetchCourse } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
 import { getAttribution } from "@/lib/attribution";
-import { ShieldCheck, CreditCard, ArrowLeft, Loader2, CheckCircle2, Tag, X } from "lucide-react";
+import { getVisitorId } from "@/lib/visitor";
+import { trackCartEvent } from "@/lib/cartTracking";
+import { ShieldCheck, CreditCard, ArrowLeft, Loader2, CheckCircle2, Tag, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { getCoursePricing } from "@/lib/coursePricing";
@@ -38,14 +40,17 @@ const loadCashfreeScript = (): Promise<any> => {
 };
 
 function CheckoutPage() {
-  const navigate = useNavigate();
   const { slug } = Route.useParams();
-  
+
   // Billing details
   const [phone, setPhone] = useState("");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [pincode, setPincode] = useState("");
+
+  // Guest checkout details — only used when no student session is found
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
 
   // Cashfree payment processing steps
   const [paymentStep, setPaymentStep] = useState<number>(-1);
@@ -80,12 +85,11 @@ function CheckoutPage() {
     queryFn: () => fetchCourse(slug),
   });
 
-  // Gated on `student`: an unauthenticated visitor who lands on /checkout/:slug is
-  // immediately redirected to /login and never starts a checkout. Firing on plain
-  // page load counted those redirects as InitiateCheckout, which is why the event
-  // volume ran far above ViewContent.
+  // Checkout no longer requires login, so this fires once we know the course
+  // and have settled whether the visitor is logged in or checking out as a
+  // guest — not gated on `student` alone, which would skip guest visitors.
   useEffect(() => {
-    if (course && student) {
+    if (course && !isProfileLoading) {
       trackMetaEvent("InitiateCheckout", {
         content_name: course.title,
         content_category: course.category,
@@ -94,16 +98,16 @@ function CheckoutPage() {
         value: course.price,
         currency: "INR",
       });
+      trackCartEvent("begin_checkout", {
+        courseSlug: course.slug,
+        courseTitle: course.title,
+        amount: course.price,
+        name: student?.name,
+        email: student?.email,
+        phone: student?.phone,
+      });
     }
-  }, [course, student]);
-
-  // If unauthorized, redirect to login
-  useEffect(() => {
-    if (isProfileError) {
-      toast.error("Please log in to purchase the course");
-      navigate({ to: "/login", search: { redirect: `/checkout/${slug}` } });
-    }
-  }, [isProfileError, navigate, slug]);
+  }, [course, isProfileLoading]);
 
   const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
 
@@ -173,12 +177,14 @@ function CheckoutPage() {
         body: JSON.stringify({
           courseSlug: slug,
           addonSlugs: Array.from(selectedAddons),
+          ...(isGuest ? { name: guestName.trim(), email: guestEmail.trim() } : {}),
           phone: phone.trim(),
           state: state.trim(),
           city: city.trim(),
           pincode: pincode.trim(),
           couponCode: appliedCoupon?.code,
           attribution: getAttribution(),
+          visitorId: getVisitorId(),
         }),
       });
       const data = await res.json();
@@ -211,6 +217,16 @@ function CheckoutPage() {
   });
 
   const handlePayment = () => {
+    if (isGuest) {
+      if (!guestName.trim()) {
+        toast.error("Please enter your full name");
+        return;
+      }
+      if (!guestEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
+    }
     if (!phone.trim()) {
       toast.error("Please enter a valid phone number");
       return;
@@ -240,6 +256,16 @@ function CheckoutPage() {
         value: course.price,
         currency: "INR",
       });
+      trackCartEvent("customer_details_submitted", {
+        courseSlug: course.slug,
+        courseTitle: course.title,
+        amount: totalAmount,
+        name: isGuest ? guestName.trim() : student?.name,
+        email: isGuest ? guestEmail.trim() : student?.email,
+        phone: phone.trim(),
+        state: state.trim(),
+        city: city.trim(),
+      });
     }
     setPaymentStep(0); // Connecting to gateway
     checkoutMutation.mutate();
@@ -247,10 +273,9 @@ function CheckoutPage() {
 
   const isLoading = isProfileLoading || isCourseLoading;
   const isProcessingPayment = paymentStep >= 0;
-
-  if (isProfileError) {
-    return null; // Will redirect
-  }
+  // No session means this visitor is checking out as a guest — the billing
+  // block below collects name/email for them instead of showing account info.
+  const isGuest = isProfileError;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -303,40 +328,61 @@ function CheckoutPage() {
                 {/* Recommended add-on courses the student can also buy */}
                 {course.recommendedCourseDetails && course.recommendedCourseDetails.length > 0 && (
                   <div className="space-y-3 border-b border-border pb-6">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Frequently Bought Together
-                    </h3>
-                    <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <h3 className="text-sm font-bold">Frequently Bought Together</h3>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
                       {course.recommendedCourseDetails.map((rec) => {
                         const checked = selectedAddons.has(rec.slug);
+                        const pricing = getCoursePricing(rec.price, rec.originalPrice);
                         return (
-                          <label
+                          <button
+                            type="button"
                             key={rec.slug}
-                            className={`flex items-center gap-3 p-2.5 rounded-xl border cursor-pointer transition-colors ${
-                              checked ? "bg-primary/5 border-primary/20" : "bg-muted/20 border-border hover:bg-muted/30"
+                            onClick={() => toggleAddon(rec.slug)}
+                            className={`shrink-0 w-[200px] snap-start text-left rounded-2xl border p-3 transition-colors ${
+                              checked ? "bg-primary/5 border-primary" : "bg-muted/20 border-border hover:bg-muted/30"
                             }`}
                           >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleAddon(rec.slug)}
-                              className="h-4 w-4 shrink-0 accent-primary"
-                            />
-                            <div className="w-14 aspect-video rounded-md overflow-hidden shrink-0">
+                            <div className="aspect-video rounded-lg overflow-hidden mb-2">
                               <img
                                 src={getCourseImage(rec.category, rec.imageUrl)}
                                 alt={rec.title}
                                 className="h-full w-full object-cover object-top"
                               />
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold truncate">{rec.title}</p>
-                              <p className="text-xs text-muted-foreground">{rec.durationHours} hrs content</p>
+                            <p className="text-sm font-semibold leading-snug line-clamp-2 min-h-[2.5em]">{rec.title}</p>
+                            {rec.shortDescription && (
+                              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{rec.shortDescription}</p>
+                            )}
+                            <div className="flex items-baseline gap-1.5 mt-1.5 flex-wrap">
+                              <span className="text-sm font-extrabold text-primary">₹{pricing.price.toLocaleString()}</span>
+                              {pricing.hasDiscount && (
+                                <>
+                                  <span className="text-[10px] text-muted-foreground line-through">
+                                    ₹{pricing.originalPrice.toLocaleString()}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1 py-0.5 rounded">
+                                    {pricing.discountPercent}% OFF
+                                  </span>
+                                </>
+                              )}
                             </div>
-                            <span className="shrink-0 text-sm font-bold text-primary">
-                              +₹{rec.price}
-                            </span>
-                          </label>
+                            <div
+                              className={`mt-2 flex items-center justify-center gap-1.5 rounded-full py-1.5 text-xs font-semibold ${
+                                checked ? "bg-primary text-primary-foreground" : "bg-white border border-primary/40 text-primary"
+                              }`}
+                            >
+                              {checked ? (
+                                <>
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Added to Order
+                                </>
+                              ) : (
+                                "+ Add to Order"
+                              )}
+                            </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -344,22 +390,63 @@ function CheckoutPage() {
                 )}
 
                 {/* Billing Details */}
-                {student && (
+                {!isProfileLoading && (
                   <div className="space-y-3 pt-2">
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Billing Details
                     </h3>
                     <div className="space-y-4 p-5 bg-muted/20 rounded-3xl border border-border">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Student Name</label>
-                          <p className="text-sm font-semibold text-foreground">{student.name}</p>
+                      {student ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Student Name</label>
+                            <p className="text-sm font-semibold text-foreground">{student.name}</p>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Student Email</label>
+                            <p className="text-sm font-semibold text-foreground truncate">{student.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Student Email</label>
-                          <p className="text-sm font-semibold text-foreground truncate">{student.email}</p>
-                        </div>
-                      </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between gap-2 pb-1">
+                            <p className="text-xs text-muted-foreground">
+                              Checking out as a guest — no account needed right now.
+                            </p>
+                            <Link
+                              to="/login"
+                              search={{ redirect: `/checkout/${slug}` }}
+                              className="text-xs font-semibold text-primary hover:underline shrink-0"
+                            >
+                              Log in instead
+                            </Link>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Full Name *</label>
+                              <input
+                                type="text"
+                                value={guestName}
+                                onChange={(e) => setGuestName(e.target.value)}
+                                placeholder="Your full name"
+                                className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Email Address *</label>
+                              <input
+                                type="email"
+                                value={guestEmail}
+                                onChange={(e) => setGuestEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary font-medium"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                       <div className="border-t border-border/60 my-2" />
 

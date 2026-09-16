@@ -5,6 +5,7 @@ import { CoursesSection } from "@/components/site/CoursesSection";
 import { CertificateStats } from "@/components/site/CertificateStats";
 import { Vision } from "@/components/site/Vision";
 import { CertificateSection } from "@/components/site/CertificateSection";
+import { YoutubeSection } from "@/components/site/YoutubeSection";
 import { Stats } from "@/components/site/Stats";
 import { Testimonials } from "@/components/site/Testimonials";
 import { Faq } from "@/components/site/Faq";
@@ -26,6 +27,7 @@ function Index() {
         <CertificateStats />
         <Vision />
         <CertificateSection />
+        <YoutubeSection />
         <Testimonials />
         <Faq />
         <CommunityCTA />

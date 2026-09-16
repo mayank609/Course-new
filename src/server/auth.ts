@@ -64,3 +64,12 @@ export function clearStudentCookieHeader(): string {
   return `${STUDENT_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Max-Age=0; Path=/`;
 }
 
+// Reduces any phone number formatting (+91, spaces, dashes, leading 0) down to
+// its last 10 digits so a guest checkout and a later registration can be
+// matched to the same person regardless of how they typed their number.
+export function normalizePhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  return digits.slice(-10);
+}
+

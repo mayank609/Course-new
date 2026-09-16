@@ -9,8 +9,16 @@ import { Student } from "./models/Student";
 import { Purchase } from "./models/Purchase";
 import { Testimonial } from "./models/Testimonial";
 import { Coupon } from "./models/Coupon";
-import { sendPasswordResetEmail, sendRegistrationOtpEmail } from "./mail";
-import { sendWhatsAppPurchaseNotification } from "./whatsapp";
+import { CartActivity, CART_ACTIVITY_STATUSES } from "./models/CartActivity";
+import { SiteSettings } from "./models/SiteSettings";
+import {
+  sendPasswordResetEmail,
+  sendRegistrationOtpEmail,
+  sendActivationOtpEmail,
+  sendGuestPurchaseConfirmationEmail,
+  sendActivationLinkEmail,
+} from "./mail";
+import { sendWhatsAppPurchaseNotification, sendWhatsAppActivationLink } from "./whatsapp";
 import { uploadImageToCloudinary } from "./cloudinary";
 import { validateCoupon } from "./coupons";
 import { ALLOWED_META_EVENTS, sendMetaEvent, sendMetaPurchaseEvent } from "./metaConversions";
@@ -24,10 +32,142 @@ import {
   studentCookieHeader,
   clearStudentCookieHeader,
   parseCookies,
+  normalizePhone,
 } from "./auth";
 
 const PASSWORD_RESET_PURPOSE = "password_reset";
 const REGISTER_OTP_PURPOSE = "register_otp";
+const ACTIVATION_TOKEN_PURPOSE = "account_activation";
+const ACTIVATION_OTP_PURPOSE = "activation_otp";
+
+// Finds an existing student by email or (normalized) phone so a guest checkout
+// never creates a duplicate account for someone who already has one — guest or
+// registered. Creates a new, not-yet-activated student record when no match
+// exists. The returned student's course access can be granted immediately;
+// activation (setting a password) is a separate, optional step.
+async function findOrCreateGuestStudent({
+  name,
+  email,
+  phone,
+}: {
+  name: string;
+  email: string;
+  phone: string;
+}): Promise<{ student: InstanceType<typeof Student>; isNew: boolean }> {
+  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedPhone = normalizePhone(phone);
+
+  const existing = await Student.findOne({
+    $or: [
+      { email: normalizedEmail },
+      ...(normalizedPhone ? [{ phoneNormalized: normalizedPhone }] : []),
+    ],
+  });
+
+  if (existing) {
+    let changed = false;
+    if (!existing.phone && phone) {
+      existing.phone = phone.trim();
+      existing.phoneNormalized = normalizedPhone;
+      changed = true;
+    }
+    if (changed) await existing.save();
+    return { student: existing, isNew: false };
+  }
+
+  const student = await Student.create({
+    name: name.trim(),
+    email: normalizedEmail,
+    phone: phone.trim(),
+    phoneNormalized: normalizedPhone,
+    passwordHash: "",
+    isActivated: false,
+  });
+  return { student, isNew: true };
+}
+
+// Events a browser is allowed to report directly. Anything downstream of an
+// actual payment attempt (payment_initiated / payment_failed /
+// purchase_completed) is only ever written from the server-side create-order
+// and verify handlers below, so a visitor can never spoof a fake purchase
+// into the admin's cart-tracking table.
+const CLIENT_TRACKABLE_CART_EVENTS = ["add_to_cart", "begin_checkout", "customer_details_submitted"] as const;
+
+const CART_EVENT_STATUS: Record<string, (typeof CART_ACTIVITY_STATUSES)[number]> = {
+  add_to_cart: "Added to Cart",
+  begin_checkout: "Checkout Started",
+  customer_details_submitted: "Checkout Started",
+  payment_initiated: "Payment Pending",
+  payment_failed: "Payment Failed",
+  purchase_completed: "Purchase Completed",
+};
+
+// Upserts the one row that tracks this visitor's progress on this course
+// through the funnel (see CartActivity.ts). Fields are only overwritten when
+// the caller actually supplies them, so an earlier, more-complete snapshot
+// (e.g. billing details already filled in) never gets blanked out by a
+// later, less-detailed event.
+async function recordCartEvent(params: {
+  visitorId?: string;
+  event: string;
+  courseSlug?: string;
+  courseTitle?: string;
+  amount?: number;
+  currency?: string;
+  studentId?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  state?: string;
+  city?: string;
+  orderId?: string;
+  attribution?: {
+    source?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    referrer?: string;
+    landingPage?: string;
+  };
+}): Promise<void> {
+  const { visitorId, event, courseSlug } = params;
+  if (!visitorId || !courseSlug) return;
+
+  const existing = await CartActivity.findOne({ visitorId, courseSlug }).select("status");
+  // A converted row never regresses — a stray duplicate event after purchase
+  // must not make a real sale look abandoned in the admin table.
+  if (existing?.status === "Purchase Completed") return;
+
+  const nextStatus = CART_EVENT_STATUS[event] ?? existing?.status ?? "Added to Cart";
+
+  const setFields: Record<string, unknown> = { status: nextStatus, lastActivityAt: new Date() };
+  if (params.courseTitle) setFields.courseTitle = params.courseTitle;
+  if (typeof params.amount === "number") setFields.amount = params.amount;
+  if (params.currency) setFields.currency = params.currency;
+  if (params.studentId) setFields.studentId = params.studentId;
+  if (params.name) setFields.name = params.name;
+  if (params.email) setFields.email = params.email;
+  if (params.phone) setFields.phone = params.phone;
+  if (params.state) setFields.state = params.state;
+  if (params.city) setFields.city = params.city;
+  if (params.orderId) setFields.orderId = params.orderId;
+  if (params.attribution?.source) setFields.source = params.attribution.source;
+  if (params.attribution?.utmSource) setFields.utmSource = params.attribution.utmSource;
+  if (params.attribution?.utmMedium) setFields.utmMedium = params.attribution.utmMedium;
+  if (params.attribution?.utmCampaign) setFields.utmCampaign = params.attribution.utmCampaign;
+  if (params.attribution?.referrer) setFields.referrer = params.attribution.referrer;
+  if (params.attribution?.landingPage) setFields.landingPage = params.attribution.landingPage;
+
+  await CartActivity.updateOne(
+    { visitorId, courseSlug },
+    {
+      $set: setFields,
+      $push: { events: { event, at: new Date() } },
+      $setOnInsert: { visitorId, courseSlug },
+    },
+    { upsert: true }
+  );
+}
 
 function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -132,6 +272,52 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     return json({ ok: true });
   }
 
+  // Records one step of a visitor's add-to-cart / checkout funnel so the
+  // admin "Cart & Checkout Tracking" screen can show live progress and flag
+  // abandoned carts. Only pre-payment events are accepted here — see
+  // CLIENT_TRACKABLE_CART_EVENTS.
+  if (method === "POST" && path === "/cart-track") {
+    const body = await readJson(request);
+    const { visitorId, event, courseSlug, courseTitle, amount, name, email, phone, state, city, attribution } =
+      body as {
+        visitorId?: string;
+        event?: string;
+        courseSlug?: string;
+        courseTitle?: string;
+        amount?: number;
+        name?: string;
+        email?: string;
+        phone?: string;
+        state?: string;
+        city?: string;
+        attribution?: Record<string, string>;
+      };
+    if (!visitorId || !event || !courseSlug) {
+      return json({ error: "visitorId, event and courseSlug are required" }, { status: 400 });
+    }
+    if (!(CLIENT_TRACKABLE_CART_EVENTS as readonly string[]).includes(event)) {
+      return json({ error: "Unsupported event" }, { status: 400 });
+    }
+
+    const session = getStudentSession(request);
+    await recordCartEvent({
+      visitorId,
+      event,
+      courseSlug,
+      courseTitle,
+      amount: typeof amount === "number" ? amount : undefined,
+      studentId: session?.id,
+      name,
+      email,
+      phone,
+      state,
+      city,
+      attribution,
+    });
+
+    return json({ ok: true });
+  }
+
   if (method === "GET" && path === "/courses") {
     const filter: Record<string, unknown> = { published: true };
     const category = url.searchParams.get("category");
@@ -207,6 +393,14 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     return json(list);
   }
 
+  if (method === "GET" && path === "/site-settings") {
+    const settings = await SiteSettings.findById("singleton");
+    return json({
+      youtubeVideoUrl: settings?.youtubeVideoUrl || "",
+      youtubeChannelUrl: settings?.youtubeChannelUrl || "",
+    });
+  }
+
   if (method === "POST" && path === "/leads") {
     const body = await readJson(request);
     const { name, email, phone, company, message, source, courseTitle } = body as Record<string, string>;
@@ -229,9 +423,27 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       return json({ error: "Name, email and password are required" }, { status: 400 });
     }
     const normalizedEmail = email.toLowerCase();
-    const existing = await Student.findOne({ email: normalizedEmail });
-    if (existing) {
-      return json({ error: "An account with this email already exists" }, { status: 409 });
+    const normalizedPhone = normalizePhone(phone);
+    const existing = await Student.findOne({
+      $or: [
+        { email: normalizedEmail },
+        ...(normalizedPhone ? [{ phoneNormalized: normalizedPhone }] : []),
+      ],
+    });
+    if (existing && existing.isActivated) {
+      return json({ error: "An account with this email or phone already exists" }, { status: 409 });
+    }
+    if (existing && !existing.isActivated) {
+      // A guest checkout already created this record from a past purchase — don't
+      // create a second account, direct them to activate the one they have.
+      return json(
+        {
+          error:
+            "You already have a purchase under this email or phone. Check your email/WhatsApp for an activation link, or use Forgot Password to set one.",
+          guestAccountExists: true,
+        },
+        { status: 409 }
+      );
     }
 
     const otp = generateOtp();
@@ -275,17 +487,34 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     }
 
     const existing = await Student.findOne({ email: payload.email });
-    if (existing) {
+    if (existing && existing.isActivated) {
       return json({ error: "An account with this email already exists" }, { status: 409 });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const student = await Student.create({
-      name: payload.name,
-      email: payload.email,
-      passwordHash,
-      phone: payload.phone,
-    });
+    let student;
+    if (existing) {
+      // A guest account was created (e.g. from a purchase) between register/start
+      // and this verify call — claim it instead of creating a duplicate.
+      existing.name = payload.name;
+      existing.passwordHash = passwordHash;
+      if (payload.phone) {
+        existing.phone = payload.phone;
+        existing.phoneNormalized = normalizePhone(payload.phone);
+      }
+      existing.isActivated = true;
+      await existing.save();
+      student = existing;
+    } else {
+      student = await Student.create({
+        name: payload.name,
+        email: payload.email,
+        passwordHash,
+        phone: payload.phone,
+        phoneNormalized: normalizePhone(payload.phone),
+        isActivated: true,
+      });
+    }
     const sessionToken = signStudentSession({ id: String(student._id), email: student.email, name: student.name });
     return jsonWithCookie(
       { id: student._id, email: student.email, name: student.name },
@@ -300,7 +529,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       return json({ error: "Email and password are required" }, { status: 400 });
     }
     const student = await Student.findOne({ email: email.toLowerCase() });
-    if (!student || !(await bcrypt.compare(password, student.passwordHash))) {
+    if (!student || !student.passwordHash || !(await bcrypt.compare(password, student.passwordHash))) {
       return json({ error: "Invalid email or password" }, { status: 401 });
     }
     const token = signStudentSession({ id: String(student._id), email: student.email, name: student.name });
@@ -367,9 +596,149 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     }
 
     student.passwordHash = await bcrypt.hash(password, 10);
+    student.isActivated = true;
     await student.save();
 
     return json({ message: "Password reset successful. You can now log in." });
+  }
+
+  // --- Guest account activation (set a password for an account created by a guest checkout) ---
+
+  if (method === "POST" && path === "/student/activate/verify-token") {
+    const body = await readJson(request);
+    const { token } = body as { token?: string };
+    if (!token) return json({ error: "Token is required" }, { status: 400 });
+
+    let payload: { id: string; purpose: string };
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!) as typeof payload;
+    } catch {
+      return json({ error: "This activation link is invalid or has expired." }, { status: 400 });
+    }
+    if (payload.purpose !== ACTIVATION_TOKEN_PURPOSE) {
+      return json({ error: "Invalid activation token" }, { status: 400 });
+    }
+
+    const student = await Student.findById(payload.id).select("name email isActivated");
+    if (!student) return json({ error: "Account not found" }, { status: 404 });
+
+    return json({ name: student.name, email: student.email, alreadyActivated: student.isActivated });
+  }
+
+  if (method === "POST" && path === "/student/activate/send-otp") {
+    const body = await readJson(request);
+    const { token } = body as { token?: string };
+    if (!token) return json({ error: "Token is required" }, { status: 400 });
+
+    let payload: { id: string; purpose: string };
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!) as typeof payload;
+    } catch {
+      return json({ error: "This activation link is invalid or has expired." }, { status: 400 });
+    }
+    if (payload.purpose !== ACTIVATION_TOKEN_PURPOSE) {
+      return json({ error: "Invalid activation token" }, { status: 400 });
+    }
+
+    const student = await Student.findById(payload.id);
+    if (!student) return json({ error: "Account not found" }, { status: 404 });
+    if (student.isActivated) {
+      return json({ error: "This account is already activated. Please log in." }, { status: 400 });
+    }
+
+    const otp = generateOtp();
+    const otpToken = jwt.sign(
+      { id: String(student._id), purpose: ACTIVATION_OTP_PURPOSE, otp },
+      process.env.JWT_SECRET!,
+      { expiresIn: "10m" }
+    );
+
+    if (!process.env.BREVO_API_KEY) {
+      console.log(`[activate] BREVO_API_KEY not set — OTP for ${student.email}: ${otp}`);
+    }
+    try {
+      await sendActivationOtpEmail(student.email, student.name, otp);
+    } catch (err) {
+      console.error("[activate] failed to send OTP email:", err);
+      return json({ error: "Failed to send verification email. Please try again." }, { status: 500 });
+    }
+
+    return json({ otpToken });
+  }
+
+  if (method === "POST" && path === "/student/activate/complete") {
+    const body = await readJson(request);
+    const { otpToken, otp, password } = body as { otpToken?: string; otp?: string; password?: string };
+    if (!otpToken || !otp || !password) {
+      return json({ error: "Token, code and password are required" }, { status: 400 });
+    }
+    if (password.length < 6) {
+      return json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    }
+
+    let payload: { id: string; purpose: string; otp: string };
+    try {
+      payload = jwt.verify(otpToken, process.env.JWT_SECRET!) as typeof payload;
+    } catch {
+      return json({ error: "This verification code has expired. Please request a new one." }, { status: 400 });
+    }
+    if (payload.purpose !== ACTIVATION_OTP_PURPOSE) {
+      return json({ error: "Invalid verification token" }, { status: 400 });
+    }
+    if (payload.otp !== otp.trim()) {
+      return json({ error: "Incorrect verification code" }, { status: 400 });
+    }
+
+    const student = await Student.findById(payload.id);
+    if (!student) return json({ error: "Account not found" }, { status: 404 });
+
+    student.passwordHash = await bcrypt.hash(password, 10);
+    student.isActivated = true;
+    await student.save();
+
+    const sessionToken = signStudentSession({ id: String(student._id), email: student.email, name: student.name });
+    return jsonWithCookie(
+      { id: student._id, email: student.email, name: student.name },
+      studentCookieHeader(sessionToken)
+    );
+  }
+
+  if (method === "POST" && path === "/student/resend-activation") {
+    const body = await readJson(request);
+    const { email } = body as { email?: string };
+    if (!email) return json({ error: "Email is required" }, { status: 400 });
+
+    // Same generic-response pattern as forgot-password — never reveal via timing
+    // or response shape whether an account exists for this email.
+    const genericResponse = json({
+      message: "If a purchase exists under that email, we've sent an activation link.",
+    });
+
+    const student = await Student.findOne({ email: email.toLowerCase(), isActivated: false });
+    if (!student) return genericResponse;
+
+    const activationToken = jwt.sign(
+      { id: String(student._id), purpose: ACTIVATION_TOKEN_PURPOSE },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" }
+    );
+    const activationUrl = `${url.origin}/activate?token=${encodeURIComponent(activationToken)}`;
+
+    if (!process.env.BREVO_API_KEY) {
+      console.log(`[resend-activation] BREVO_API_KEY not set — activation link for ${student.email}: ${activationUrl}`);
+    }
+    try {
+      await sendActivationLinkEmail(student.email, student.name, activationUrl);
+    } catch (err) {
+      console.error("[resend-activation] failed to send email:", err);
+    }
+    if (student.phone) {
+      sendWhatsAppActivationLink(student.name, student.phone, student.purchasedCourses[0] || "your course", activationUrl).catch(
+        (err) => console.error("[resend-activation] WhatsApp send failed:", err)
+      );
+    }
+
+    return genericResponse;
   }
 
   if (method === "GET" && path === "/categories") {
@@ -527,12 +896,18 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
   }
 
   if (method === "POST" && path === "/payment/create-order") {
+    // A logged-in session is used when present, but checkout no longer requires
+    // one — an anonymous visitor can pay as a guest by supplying name/email
+    // themselves. Either way we end up with a real Student document so course
+    // access, receipts and admin visibility work identically afterwards.
     const session = getStudentSession(request);
-    if (!session) return json({ error: "Not authenticated" }, { status: 401 });
-const body = await readJson(request);
-    const { courseSlug, addonSlugs, phone, state, city, pincode, couponCode, attribution } = body as {
+    const body = await readJson(request);
+    const { courseSlug, addonSlugs, name, email, phone, state, city, pincode, couponCode, attribution, visitorId } = body as {
       courseSlug?: string;
       addonSlugs?: string[];
+      name?: string;
+      email?: string;
+      visitorId?: string;
       phone?: string;
       state?: string;
       city?: string;
@@ -551,16 +926,28 @@ const body = await readJson(request);
     if (!phone || !phone.trim() || !state || !state.trim() || !city || !city.trim() || !pincode || !pincode.trim()) {
       return json({ error: "Phone, state, city, and pincode are required" }, { status: 400 });
     }
+    if (!session) {
+      if (!name || !name.trim() || !email || !email.trim()) {
+        return json({ error: "Name and email are required" }, { status: 400 });
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        return json({ error: "Please enter a valid email address" }, { status: 400 });
+      }
+    }
 
     const course = await Course.findOne({ slug: courseSlug });
     if (!course) return json({ error: "Course not found" }, { status: 404 });
 
-    const student = await Student.findById(session.id);
+    const student = session
+      ? await Student.findById(session.id)
+      : (await findOrCreateGuestStudent({ name: name!, email: email!, phone })).student;
     if (!student) return json({ error: "Student not found" }, { status: 404 });
+    const isGuestCheckout = !session;
 
     // Update phone in student profile if different
     if (phone && phone.trim() && student.phone !== phone.trim()) {
       student.phone = phone.trim();
+      student.phoneNormalized = normalizePhone(phone);
       await student.save();
     }
 
@@ -671,6 +1058,7 @@ const body = await readJson(request);
         currency: item.currency,
         status: "pending",
         paymentId: orderId,
+        isGuestPurchase: isGuestCheckout,
         couponCode: appliedCouponCode,
         discountAmount: item.discountAmount,
         source: attribution?.source || "Direct / Website",
@@ -680,19 +1068,45 @@ const body = await readJson(request);
         referrer: attribution?.referrer || "",
         landingPage: attribution?.landingPage || "",
       });
+
+      recordCartEvent({
+        visitorId,
+        event: "payment_initiated",
+        courseSlug: item.slug,
+        courseTitle: item.title,
+        amount: item.finalAmount,
+        currency: item.currency,
+        studentId: String(student._id),
+        name: student.name,
+        email: student.email,
+        phone: phone || student.phone || "",
+        state,
+        city,
+        orderId,
+        attribution,
+      }).catch((err) => console.error("Error recording payment_initiated cart event:", err));
     }
 
     return json({ paymentSessionId, orderId, ok: true }, { status: 201 });
   }
 
   if (method === "GET" && path === "/payment/verify") {
-    const session = getStudentSession(request);
-    if (!session) return json({ error: "Not authenticated" }, { status: 401 });
-
     const orderId = url.searchParams.get("order_id");
     if (!orderId) return json({ error: "order_id is required" }, { status: 400 });
 
-    const student = await Student.findById(session.id);
+    // The order the checkout flow created (logged-in or guest) already carries
+    // the resolved studentId, so verification doesn't need — and, for a guest,
+    // doesn't have — a pre-existing session. orderId itself acts as the bearer
+    // credential, the same way the Cashfree return_url already exposes it.
+    const anyPurchaseForOrder = await Purchase.findOne({ paymentId: orderId });
+    if (!anyPurchaseForOrder) return json({ error: "Order not found" }, { status: 404 });
+
+    const session = getStudentSession(request);
+    if (session && session.id !== String(anyPurchaseForOrder.studentId)) {
+      return json({ error: "This order does not belong to your account" }, { status: 403 });
+    }
+
+    const student = await Student.findById(anyPurchaseForOrder.studentId);
     if (!student) return json({ error: "Student not found" }, { status: 404 });
 
     const clientId = process.env.CASHFREE_CLIENT_ID;
@@ -762,6 +1176,32 @@ const body = await readJson(request);
           });
         }
 
+        // Guest checkouts create a not-yet-activated Student record — send the
+        // receipt plus an activation link so they can set a password later.
+        // Registered students who checked out while logged in skip this.
+        if (!student.isActivated) {
+          const activationToken = jwt.sign(
+            { id: String(student._id), purpose: ACTIVATION_TOKEN_PURPOSE },
+            process.env.JWT_SECRET!,
+            { expiresIn: "7d" }
+          );
+          const activationUrl = `${url.origin}/activate?token=${encodeURIComponent(activationToken)}`;
+          sendGuestPurchaseConfirmationEmail(
+            student.email,
+            student.name,
+            courseTitle || "your course",
+            totalAmount,
+            currency,
+            orderId,
+            activationUrl
+          ).catch((err) => console.error("Error sending guest purchase confirmation email:", err));
+          if (student.phone) {
+            sendWhatsAppActivationLink(student.name, student.phone, courseTitle || "your course", activationUrl).catch((err) =>
+              console.error("Error sending guest WhatsApp activation link:", err)
+            );
+          }
+        }
+
         const cookies = parseCookies(request.headers.get("cookie"));
         const forwardedFor = request.headers.get("x-forwarded-for");
         sendMetaPurchaseEvent({
@@ -792,20 +1232,50 @@ const body = await readJson(request);
         }
       }
 
-      return json({
+      CartActivity.updateMany(
+        { orderId },
+        { $set: { status: "Purchase Completed", lastActivityAt: new Date() }, $push: { events: { event: "purchase_completed", at: new Date() } } }
+      ).catch((err) => console.error("Error updating cart activity to Purchase Completed:", err));
+
+      // No session on this request means this was a guest checkout (or a
+      // session that expired mid-flow) — log them in immediately so the
+      // thank-you page and dashboard work without a separate login step.
+      //
+      // SECURITY: only do this when the resolved student has no password yet
+      // (a fresh guest account, or one still pending activation). If the
+      // email/phone the guest typed matched an already-activated account,
+      // the purchase still gets linked to it (per the "match existing
+      // accounts" requirement) but we must NOT hand out a live session for
+      // someone else's real account just because a stranger typed their
+      // phone number into a checkout form with no password check at all —
+      // they need to log in with the real password to see it.
+      const willAutoLogin = !session && !student.isActivated;
+      const responseBody = {
         ok: true,
         courseTitle: courseTitle || "Course",
         amount: totalAmount,
         currency,
         orderId,
         courseSlugs,
-      });
+        isGuestPurchase: !student.isActivated,
+        loggedIn: Boolean(session) || willAutoLogin,
+      };
+
+      if (willAutoLogin) {
+        const loginToken = signStudentSession({ id: String(student._id), email: student.email, name: student.name });
+        return jsonWithCookie(responseBody, studentCookieHeader(loginToken));
+      }
+      return json(responseBody);
     } else {
       // "ACTIVE" means the customer may still complete payment — the frontend keeps polling.
       // Anything else (EXPIRED, TERMINATED, TERMINATION_REQUESTED, etc.) is a terminal failure,
       // so stop leaving the pending Purchase records stuck forever.
       if (cfData.order_status && cfData.order_status !== "ACTIVE") {
         await Purchase.updateMany({ paymentId: orderId, status: "pending" }, { status: "failed" });
+        CartActivity.updateMany(
+          { orderId, status: { $ne: "Purchase Completed" } },
+          { $set: { status: "Payment Failed", lastActivityAt: new Date() }, $push: { events: { event: "payment_failed", at: new Date() } } }
+        ).catch((err) => console.error("Error updating cart activity to Payment Failed:", err));
       }
       return json({ ok: false, status: cfData.order_status, error: "Payment not completed or failed" });
     }
@@ -842,6 +1312,27 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
     return json({ email: session.email });
   }
 
+  if (method === "GET" && path === "/site-settings") {
+    const settings = await SiteSettings.findById("singleton");
+    return json({
+      youtubeVideoUrl: settings?.youtubeVideoUrl || "",
+      youtubeChannelUrl: settings?.youtubeChannelUrl || "",
+    });
+  }
+
+  if (method === "PUT" && path === "/site-settings") {
+    const body = (await readJson(request)) as { youtubeVideoUrl?: string; youtubeChannelUrl?: string };
+    const settings = await SiteSettings.findByIdAndUpdate(
+      "singleton",
+      {
+        youtubeVideoUrl: (body.youtubeVideoUrl ?? "").trim(),
+        youtubeChannelUrl: (body.youtubeChannelUrl ?? "").trim(),
+      },
+      { new: true, upsert: true }
+    );
+    return json({ youtubeVideoUrl: settings.youtubeVideoUrl, youtubeChannelUrl: settings.youtubeChannelUrl });
+  }
+
   if (method === "POST" && path === "/upload-image") {
     try {
       const formData = await request.formData();
@@ -861,6 +1352,7 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   if (method === "GET" && path === "/stats") {
     const startDateStr = url.searchParams.get("startDate");
     const endDateStr = url.searchParams.get("endDate");
+    const courseSlug = url.searchParams.get("courseSlug");
 
     const matchQuery: Record<string, any> = { status: "completed" };
     const leadMatchQuery: Record<string, any> = {};
@@ -884,8 +1376,20 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
         newLeadMatchQuery.createdAt.$lte = endDate;
       }
     }
+    if (courseSlug) matchQuery.courseSlug = courseSlug;
 
-    const [courseCount, leadCount, newLeadCount, categoryCount, purchaseCount, studentCount, revenueResult, monthlyRevenue] = await Promise.all([
+    const [
+      courseCount,
+      leadCount,
+      newLeadCount,
+      categoryCount,
+      purchaseCount,
+      studentCount,
+      revenueResult,
+      monthlyRevenue,
+      stateBreakdown,
+      cityBreakdown,
+    ] = await Promise.all([
       Course.countDocuments(),
       Lead.countDocuments(leadMatchQuery),
       Lead.countDocuments(newLeadMatchQuery),
@@ -906,10 +1410,33 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
           }
         },
         { $sort: { "_id": 1 } }
-      ])
+      ]),
+      // Location-wise sales analytics — which states are driving the most
+      // orders/revenue in the selected date range (and course, if filtered).
+      Purchase.aggregate([
+        { $match: { ...matchQuery, studentState: { $nin: [null, ""] } } },
+        { $group: { _id: "$studentState", orders: { $sum: 1 }, revenue: { $sum: "$amount" } } },
+        { $sort: { revenue: -1 } },
+      ]),
+      Purchase.aggregate([
+        { $match: { ...matchQuery, studentCity: { $nin: [null, ""] } } },
+        { $group: { _id: "$studentCity", state: { $first: "$studentState" }, orders: { $sum: 1 }, revenue: { $sum: "$amount" } } },
+        { $sort: { revenue: -1 } },
+      ]),
     ]);
     const totalRevenue = revenueResult[0]?.total ?? 0;
-    return json({ courseCount, leadCount, newLeadCount, categoryCount, purchaseCount, studentCount, totalRevenue, monthlyRevenue });
+    return json({
+      courseCount,
+      leadCount,
+      newLeadCount,
+      categoryCount,
+      purchaseCount,
+      studentCount,
+      totalRevenue,
+      monthlyRevenue,
+      stateBreakdown: stateBreakdown.map((s: any) => ({ state: s._id, orders: s.orders, revenue: s.revenue })),
+      cityBreakdown: cityBreakdown.map((c: any) => ({ city: c._id, state: c.state || "", orders: c.orders, revenue: c.revenue })),
+    });
   }
 
   // --- Courses CRUD ---
@@ -1043,6 +1570,48 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   if (method === "DELETE" && purchaseIdMatch) {
     const purchase = await Purchase.findByIdAndDelete(purchaseIdMatch[1]);
     if (!purchase) return json({ error: "Purchase not found" }, { status: 404 });
+    return json({ ok: true });
+  }
+
+  // --- Cart & Checkout Activity (Add to Cart / Abandoned Checkout tracking) ---
+
+  if (method === "GET" && path === "/cart-activity") {
+    const filter: Record<string, unknown> = {};
+    const status = url.searchParams.get("status");
+    const source = url.searchParams.get("source");
+    const courseSlug = url.searchParams.get("courseSlug");
+    const startDateStr = url.searchParams.get("startDate");
+    const endDateStr = url.searchParams.get("endDate");
+    if (status) filter.status = status;
+    if (source) filter.source = source;
+    if (courseSlug) filter.courseSlug = courseSlug;
+    if (startDateStr || endDateStr) {
+      filter.lastActivityAt = {};
+      if (startDateStr) (filter.lastActivityAt as Record<string, Date>).$gte = new Date(startDateStr);
+      if (endDateStr) {
+        const endDate = new Date(endDateStr);
+        endDate.setHours(23, 59, 59, 999);
+        (filter.lastActivityAt as Record<string, Date>).$lte = endDate;
+      }
+    }
+    const list = await CartActivity.find(filter).sort({ lastActivityAt: -1 }).limit(2000);
+    return json(list);
+  }
+
+  const cartActivityIdMatch = path.match(/^\/cart-activity\/([^/]+)$/);
+  if (method === "PATCH" && cartActivityIdMatch) {
+    const body = (await readJson(request)) as { followUpStatus?: string; followUpNote?: string };
+    const update: Record<string, string> = {};
+    if (typeof body.followUpStatus === "string") update.followUpStatus = body.followUpStatus;
+    if (typeof body.followUpNote === "string") update.followUpNote = body.followUpNote;
+    const item = await CartActivity.findByIdAndUpdate(cartActivityIdMatch[1], update, { new: true });
+    if (!item) return json({ error: "Cart activity not found" }, { status: 404 });
+    return json(item);
+  }
+
+  if (method === "DELETE" && cartActivityIdMatch) {
+    const item = await CartActivity.findByIdAndDelete(cartActivityIdMatch[1]);
+    if (!item) return json({ error: "Cart activity not found" }, { status: 404 });
     return json({ ok: true });
   }
 

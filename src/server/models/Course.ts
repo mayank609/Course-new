@@ -35,6 +35,8 @@ const courseSchema = new mongoose.Schema(
     imageUrl: { type: String, default: "" },
     syllabusUrl: { type: String, default: "" },
     published: { type: Boolean, default: true },
+    showInFooter: { type: Boolean, default: true },
+    footerOrder: { type: Number, default: 0 },
   },
   { timestamps: true },
 );
