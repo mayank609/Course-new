@@ -20,6 +20,7 @@ const defaultTestimonials: TestimonialItem[] = [
     company: "HDFC Life",
     rating: 5,
     text: "Shubham sir's Excel training completely changed how I work. I went from knowing nothing to confidently building pivot reports for my entire department. Got promoted within 4 months.",
+    avatarUrl: "/avatars/priya.png",
   },
   {
     name: "Rahul Sinha",
@@ -27,6 +28,7 @@ const defaultTestimonials: TestimonialItem[] = [
     company: "Infosys",
     rating: 5,
     text: "The way he explains complex topics in simple language is unlike any other trainer. I had failed to learn Excel from 3 other courses. Here I understood everything — and landed my first job.",
+    avatarUrl: "/avatars/aarav.png",
   },
   {
     name: "Megha Patil",
@@ -34,6 +36,7 @@ const defaultTestimonials: TestimonialItem[] = [
     company: "TCS",
     rating: 5,
     text: "The AI module was a revelation. I now use Copilot every single day. The bonus Job Skills section helped me crack 3 interviews back to back. This is genuinely the most practical training I've done.",
+    avatarUrl: "/avatars/sneha.png",
   },
   {
     name: "Riya Sharma",
@@ -41,6 +44,7 @@ const defaultTestimonials: TestimonialItem[] = [
     company: "Sarvpratham Alum",
     rating: 5,
     text: "This course has been a game-changer for me. The content is engaging, informative, and relevant to my career goals. I highly recommend it!",
+    avatarUrl: "/avatars/rohan.png",
   },
 ];
 
@@ -99,10 +103,10 @@ export function Testimonials() {
                   <img
                     src={toDirectImageUrl(t.avatarUrl)}
                     alt={t.name}
-                    className="h-9 w-9 rounded-full object-cover border border-slate-100"
+                    className="h-14 w-14 rounded-full object-cover border-2 border-purple-100 shadow-sm shrink-0"
                   />
                 ) : (
-                  <div className="h-9 w-9 rounded-full bg-purple-50 text-[#6b21a8] flex items-center justify-center font-extrabold text-sm border border-purple-100">
+                  <div className="h-14 w-14 rounded-full bg-purple-50 text-[#6b21a8] flex items-center justify-center font-extrabold text-lg border-2 border-purple-100 shrink-0">
                     {t.name[0]}
                   </div>
                 )}

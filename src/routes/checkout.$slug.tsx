@@ -333,7 +333,7 @@ function CheckoutPage() {
                       <h3 className="text-sm font-bold">Frequently Bought Together</h3>
                     </div>
                     <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
-                      {course.recommendedCourseDetails.map((rec) => {
+                      {course.recommendedCourseDetails.slice(0, 3).map((rec) => {
                         const checked = selectedAddons.has(rec.slug);
                         const pricing = getCoursePricing(rec.price, rec.originalPrice);
                         return (

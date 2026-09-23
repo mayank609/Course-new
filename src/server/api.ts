@@ -944,12 +944,24 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     if (!student) return json({ error: "Student not found" }, { status: 404 });
     const isGuestCheckout = !session;
 
-    // Update phone in student profile if different
+    // Save the billing details filled in at checkout onto the student's own
+    // record too, so admin can see them on the Students page directly rather
+    // than only in the Purchases log.
+    let studentProfileChanged = false;
     if (phone && phone.trim() && student.phone !== phone.trim()) {
       student.phone = phone.trim();
       student.phoneNormalized = normalizePhone(phone);
-      await student.save();
+      studentProfileChanged = true;
     }
+    if (state && state.trim() && student.state !== state.trim()) {
+      student.state = state.trim();
+      studentProfileChanged = true;
+    }
+    if (city && city.trim() && student.city !== city.trim()) {
+      student.city = city.trim();
+      studentProfileChanged = true;
+    }
+    if (studentProfileChanged) await student.save();
 
     // Check if already purchased
     if (student.purchasedCourses.includes(courseSlug)) {

@@ -312,7 +312,7 @@ export function CoursesSection() {
                                     }
                                   }}
                                 >
-                                  Add to Cart
+                                  Enroll Now
                                 </Link>
                               </Button>
                             </div>

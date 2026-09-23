@@ -14,6 +14,11 @@ const studentSchema = new mongoose.Schema(
     // phone number was formatted (spaces, +91 prefix, etc). See normalizePhone().
     phoneNormalized: { type: String, trim: true, index: true },
     isActivated: { type: Boolean, default: true },
+    // Filled in from the billing details entered at checkout (see
+    // /payment/create-order) so admin can see a student's location without
+    // cross-referencing their Purchase records.
+    state: { type: String, trim: true, default: "" },
+    city: { type: String, trim: true, default: "" },
     purchasedCourses: { type: [String], default: [] }, // Array of course slugs
   },
   { timestamps: true },

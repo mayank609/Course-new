@@ -81,7 +81,7 @@
     wrap.innerHTML = `
       <table>
         <thead><tr>
-          <th>Name</th><th>Email</th><th>Phone</th><th>Account</th><th>Purchased Courses</th><th>Registered</th><th></th>
+          <th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>Account</th><th>Purchased Courses</th><th>Registered</th><th></th>
         </tr></thead>
         <tbody>
           ${filtered.map((s) => `
@@ -89,6 +89,7 @@
               <td style="font-weight:600">${escapeHtml(s.name)}</td>
               <td>${escapeHtml(s.email)}</td>
               <td>${escapeHtml(s.phone) || "—"}</td>
+              <td>${s.city || s.state ? `${escapeHtml(s.city || "")}${s.city && s.state ? ", " : ""}${escapeHtml(s.state || "")}` : '<span class="muted italic">&mdash;</span>'}</td>
               <td>
                 ${s.isActivated === false
                   ? '<span class="badge" style="background:#fef9c3;color:#854d0e;font-weight:700">Guest (Pending)</span>'
@@ -202,6 +203,8 @@
         { key: "name", label: "Name" },
         { key: "email", label: "Email" },
         { key: "phone", label: "Phone" },
+        { key: "city", label: "City" },
+        { key: "state", label: "State" },
         { key: "isActivated", label: "Activated" },
         { key: "purchasedCourses", label: "Purchased Courses" },
         { key: "createdAt", label: "Registration Date" }
