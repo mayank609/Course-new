@@ -97,7 +97,7 @@
                 }
               </td>
               <td>
-                ${(s.purchasedCourses || []).length > 0 
+                ${(s.purchasedCourses || []).length > 0
                   ? (s.purchasedCourses || []).map(slug => `<span class="badge badge-contacted" style="margin-right:4px">${escapeHtml(slug)}</span>`).join("")
                   : '<span class="muted">None yet</span>'
                 }
