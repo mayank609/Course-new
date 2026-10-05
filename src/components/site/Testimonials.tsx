@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Reveal } from "@/components/site/Reveal";
 import { toDirectImageUrl } from "@/lib/imageUrl";
@@ -99,17 +100,7 @@ export function Testimonials() {
               </div>
 
               <div className="mt-6 border-t border-slate-50 pt-4 flex items-center gap-3">
-                {t.avatarUrl ? (
-                  <img
-                    src={toDirectImageUrl(t.avatarUrl)}
-                    alt={t.name}
-                    className="h-14 w-14 rounded-full object-cover border-2 border-purple-100 shadow-sm shrink-0"
-                  />
-                ) : (
-                  <div className="h-14 w-14 rounded-full bg-purple-50 text-[#6b21a8] flex items-center justify-center font-extrabold text-lg border-2 border-purple-100 shrink-0">
-                    {t.name[0]}
-                  </div>
-                )}
+                <TestimonialAvatar name={t.name} avatarUrl={t.avatarUrl} />
                 <div>
                   <h4 className="font-sans font-bold text-xs sm:text-sm text-slate-800">{t.name}</h4>
                   <p className="text-[10px] sm:text-xs font-semibold text-slate-400">
@@ -123,5 +114,29 @@ export function Testimonials() {
 
       </div>
     </section>
+  );
+}
+
+function TestimonialAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+  const [failed, setFailed] = useState(false);
+  const src = avatarUrl?.trim() ? toDirectImageUrl(avatarUrl.trim()) : "";
+
+  if (!src || failed) {
+    return (
+      <div className="h-14 w-14 rounded-full bg-purple-50 text-[#6b21a8] flex items-center justify-center font-extrabold text-lg border-2 border-purple-100 shrink-0">
+        {name?.[0] ?? "?"}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      className="h-14 w-14 rounded-full object-cover border-2 border-purple-100 shadow-sm shrink-0"
+    />
   );
 }
