@@ -83,7 +83,7 @@ function toDirectImageUrl(url) {
   if (!url) return url;
   for (const pattern of DRIVE_ID_PATTERNS) {
     const match = url.match(pattern);
-    if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1600`;
+    if (match) return `https://lh3.googleusercontent.com/d/${match[1]}=w1600`;
   }
   return url;
 }

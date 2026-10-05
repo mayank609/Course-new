@@ -14,7 +14,7 @@ import { trackCartEvent } from "@/lib/cartTracking";
 import { ShieldCheck, CreditCard, ArrowLeft, Loader2, CheckCircle2, Tag, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { getCoursePricing } from "@/lib/coursePricing";
+import { getCoursePricing, applyGst, GST_PERCENT } from "@/lib/coursePricing";
 
 export const Route = createFileRoute("/checkout/$slug")({
   component: CheckoutPage,
@@ -166,7 +166,9 @@ function CheckoutPage() {
     },
   });
 
-  const totalAmount = appliedCoupon ? appliedCoupon.finalAmount : subtotal;
+  const taxableAmount = appliedCoupon ? appliedCoupon.finalAmount : subtotal;
+  const { gstAmount, totalWithGst: totalAmount } = applyGst(taxableAmount);
+  const formatInr = (value: number) => value.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
   // Cashfree checkout mutation
   const checkoutMutation = useMutation({
@@ -548,9 +550,13 @@ function CheckoutPage() {
                       <span>-₹{appliedCoupon.discountAmount}</span>
                     </div>
                   )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">GST ({GST_PERCENT}%)</span>
+                    <span>₹{formatInr(gstAmount)}</span>
+                  </div>
                   <div className="flex justify-between border-t border-border pt-4 text-base font-bold">
-                    <span>Total Amount</span>
-                    <span className="text-primary">₹{totalAmount}</span>
+                    <span>Total Amount <span className="text-xs font-medium text-muted-foreground">(incl. GST)</span></span>
+                    <span className="text-primary">₹{formatInr(totalAmount)}</span>
                   </div>
                 </div>
 
@@ -636,7 +642,7 @@ function CheckoutPage() {
                     disabled={checkoutMutation.isPending}
                     className="w-full rounded-full py-6 text-base font-semibold shadow-[var(--shadow-elegant)] hover:-translate-y-0.5 transition-transform"
                   >
-                    <CreditCard className="h-5 w-5 mr-2" /> Pay ₹{totalAmount}
+                    <CreditCard className="h-5 w-5 mr-2" /> Pay ₹{formatInr(totalAmount)}
                   </Button>
                 )}
 

@@ -14,7 +14,7 @@ import { useAdviserModal } from "@/components/site/AdviserModal";
 import { fetchCourse } from "@/lib/api";
 import { getCourseImage } from "@/lib/courseImages";
 import { getCourseModules, flattenLessons } from "@/lib/courseModules";
-import { getCoursePricing } from "@/lib/coursePricing";
+import { getCoursePricing, GST_PERCENT } from "@/lib/coursePricing";
 import { trackCartEvent } from "@/lib/cartTracking";
 import { RecommendedCourses } from "@/components/site/RecommendedCourses";
 
@@ -204,6 +204,9 @@ function CourseDetailPage() {
                           </div>
                         )}
                       </div>
+                      {pricing.price > 0 && (
+                        <div className="mt-1 text-xs font-medium text-muted-foreground">+ {GST_PERCENT}% GST applicable at checkout</div>
+                      )}
                       {pricing.hasDiscount && (
                         <div className="mt-2 text-xs text-emerald-600 font-bold flex items-center gap-1.5">
                           <span>✓</span>

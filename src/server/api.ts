@@ -21,6 +21,7 @@ import {
 import { sendWhatsAppPurchaseNotification, sendWhatsAppActivationLink } from "./whatsapp";
 import { uploadImageToCloudinary } from "./cloudinary";
 import { validateCoupon } from "./coupons";
+import { applyGst } from "../lib/coursePricing";
 import { ALLOWED_META_EVENTS, sendMetaEvent, sendMetaPurchaseEvent } from "./metaConversions";
 import {
   adminCookieHeader,
@@ -813,7 +814,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       studentEmail: student.email,
       courseSlug: course.slug,
       courseTitle: course.title,
-      amount: course.price,
+      amount: applyGst(course.price).totalWithGst,
       currency: course.currency,
       status: "completed",
       paymentId: mockPaymentId,
@@ -839,7 +840,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
             studentEmail: student.email,
             courseSlug: addon.slug,
             courseTitle: addon.title,
-            amount: addon.price,
+            amount: applyGst(addon.price).totalWithGst,
             currency: addon.currency,
             status: "completed",
             paymentId: `${mockPaymentId}_addon`,
@@ -1008,6 +1009,21 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       return { ...item, discountAmount: itemDiscount, finalAmount: Math.max(item.amount - itemDiscount, 0) };
     });
 
+    // 18% GST is added on top of the discounted amount. Each purchase record
+    // stores its GST-inclusive amount; the last item absorbs any rounding so
+    // the records sum exactly to what the gateway charges.
+    const { totalWithGst } = applyGst(amount);
+    let gstAllocatedSoFar = 0;
+    const itemsWithGst = itemsWithDiscount.map((item, idx) => {
+      const isLast = idx === itemsWithDiscount.length - 1;
+      const itemTotal = isLast
+        ? Math.round((totalWithGst - gstAllocatedSoFar) * 100) / 100
+        : applyGst(item.finalAmount).totalWithGst;
+      gstAllocatedSoFar += itemTotal;
+      return { ...item, finalAmount: itemTotal };
+    });
+    amount = totalWithGst;
+
     // Generate unique order ID
     const orderId = "order_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
@@ -1055,7 +1071,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const paymentSessionId = cfData.payment_session_id;
 
     // Save temporary Purchase records in the database with status "pending"
-    for (const item of itemsWithDiscount) {
+    for (const item of itemsWithGst) {
       await Purchase.create({
         studentId: student._id,
         studentName: student.name,
