@@ -341,7 +341,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     const course = await Course.findOne({ slug: courseMatch[1], published: true });
     if (!course) return json({ error: "Course not found" }, { status: 404 });
     const recommendedCourseDetails = course.recommendedCourses?.length
-      ? await Course.find({ slug: { $in: course.recommendedCourses }, published: true })
+      ? await Course.find({ slug: { $in: course.recommendedCourses.map((s: string) => s.toLowerCase().trim()) }, published: true })
       : [];
     
     const courseObj = course.toObject();
@@ -354,9 +354,11 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     // every link to any anonymous caller of this endpoint.
     const session = getStudentSession(request);
     let hasAccess = false;
+    let ownedSlugs = new Set<string>();
     if (session) {
       const viewer = await Student.findById(session.id).select("purchasedCourses");
-      hasAccess = Boolean(viewer?.purchasedCourses?.includes(course.slug));
+      ownedSlugs = new Set(viewer?.purchasedCourses ?? []);
+      hasAccess = ownedSlugs.has(course.slug);
     }
 
     if (!hasAccess) {
@@ -374,7 +376,14 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       );
     }
 
-    const recommendedObj = recommendedCourseDetails.map(rec => {
+    // Keep the order the admin picked them in (Mongo's $in returns them in
+    // arbitrary order) and skip anything the viewer already owns, since the
+    // checkout add-on list would otherwise offer a course they can't buy.
+    const recommendedOrder = (course.recommendedCourses ?? []).map((s: string) => s.toLowerCase());
+    const recommendedObj = recommendedCourseDetails
+      .filter((rec) => rec.slug !== course.slug && !ownedSlugs.has(rec.slug))
+      .sort((a, b) => recommendedOrder.indexOf(a.slug) - recommendedOrder.indexOf(b.slug))
+      .map(rec => {
       const obj = rec.toObject();
       obj.enrolledCount = Math.max(50, obj.enrolledCount || 0);
       // Upsell cards only need the marketing fields, never the content links.
