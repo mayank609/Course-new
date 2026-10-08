@@ -126,8 +126,9 @@
         <button type="button" id="add-module-btn" class="btn-ghost btn-sm" style="margin-top:10px">+ Add Module</button>
       </div>
       <div class="full">
-        <label>Recommended courses (shown as paid add-ons the student can also buy at checkout &mdash; hold Ctrl/Cmd to pick 2&ndash;3)</label>
-        <select name="recommendedCourses" id="recommended-select" multiple size="6"></select>
+        <label>Recommended courses (shown as &ldquo;Frequently Bought Together&rdquo; add-ons at checkout &mdash; tick up to 3; only published courses appear)</label>
+        <div id="recommended-list" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-top:6px;padding:10px;border:1px solid #e2e8f0;border-radius:10px"></div>
+        <div class="muted" id="recommended-count" style="font-size:0.75rem;margin-top:4px"></div>
       </div>
       <div class="full checkbox-row">
         <input type="checkbox" name="published" id="published" checked />
@@ -205,17 +206,38 @@
       names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
   }
 
+  // Checkboxes rather than a Ctrl/Cmd multi-select: a plain click on a
+  // multi-select silently drops every other selection, which made saved
+  // recommendations disappear without the admin noticing.
   function populateRecommendedSelect(excludeId, selectedSlugs) {
-    const select = document.getElementById("recommended-select");
-    const options = courses.filter((c) => c._id !== excludeId);
-    select.innerHTML = options
-      .map((c) => `<option value="${escapeHtml(c.slug)}">${escapeHtml(c.title)}</option>`)
-      .join("");
+    const list = document.getElementById("recommended-list");
     const selected = new Set(selectedSlugs || []);
-    Array.from(select.options).forEach((opt) => {
-      opt.selected = selected.has(opt.value);
-    });
+    const options = courses.filter((c) => c._id !== excludeId);
+    if (!options.length) {
+      list.innerHTML = `<div class="muted" style="font-size:0.8rem">Add more courses to recommend them here.</div>`;
+    } else {
+      list.innerHTML = options
+        .map((c) => `
+          <label style="display:flex;align-items:center;justify-content:flex-start;gap:8px;margin:0;font-weight:500;cursor:pointer;text-transform:none;letter-spacing:normal">
+            <input type="checkbox" name="recommendedCourses" value="${escapeHtml(c.slug)}" ${selected.has(c.slug) ? "checked" : ""} style="width:auto;flex:none;margin:0" />
+            <span style="text-align:left">${escapeHtml(c.title)}${c.published ? "" : ` <span class="muted" style="font-size:0.75rem">(unpublished &mdash; won't show at checkout)</span>`}</span>
+          </label>`)
+        .join("");
+    }
+    updateRecommendedCount();
   }
+
+  function getSelectedRecommended() {
+    return Array.from(document.querySelectorAll('#recommended-list input[name="recommendedCourses"]:checked')).map((el) => el.value);
+  }
+
+  function updateRecommendedCount() {
+    const n = getSelectedRecommended().length;
+    const el = document.getElementById("recommended-count");
+    el.textContent = n === 0 ? "No add-ons selected" : n > 3 ? `${n} selected — only the first 3 are shown at checkout` : `${n} selected`;
+  }
+
+  document.getElementById("recommended-list").addEventListener("change", updateRecommendedCount);
 
   function getCourseImage(slug, imageUrl) {
     if (imageUrl && imageUrl.trim()) return toDirectImageUrl(imageUrl.trim());
@@ -425,7 +447,7 @@
     data.originalPrice = data.originalPrice ? Number(data.originalPrice) : undefined;
     data.enrolledCount = data.enrolledCount ? Number(data.enrolledCount) : undefined;
     data.highlights = data.highlights ? data.highlights.split("\n").map((s) => s.trim()).filter(Boolean) : [];
-    data.recommendedCourses = Array.from(form.elements.recommendedCourses.selectedOptions).map((o) => o.value);
+    data.recommendedCourses = getSelectedRecommended();
 
     const parseList = (text) => {
       if (!text) return [];
