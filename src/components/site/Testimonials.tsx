@@ -21,7 +21,6 @@ const defaultTestimonials: TestimonialItem[] = [
     company: "HDFC Life",
     rating: 5,
     text: "Shubham sir's Excel training completely changed how I work. I went from knowing nothing to confidently building pivot reports for my entire department. Got promoted within 4 months.",
-    avatarUrl: "/avatars/priya.png",
   },
   {
     name: "Rahul Sinha",
@@ -29,7 +28,6 @@ const defaultTestimonials: TestimonialItem[] = [
     company: "Infosys",
     rating: 5,
     text: "The way he explains complex topics in simple language is unlike any other trainer. I had failed to learn Excel from 3 other courses. Here I understood everything — and landed my first job.",
-    avatarUrl: "/avatars/aarav.png",
   },
   {
     name: "Megha Patil",
@@ -37,7 +35,6 @@ const defaultTestimonials: TestimonialItem[] = [
     company: "TCS",
     rating: 5,
     text: "The AI module was a revelation. I now use Copilot every single day. The bonus Job Skills section helped me crack 3 interviews back to back. This is genuinely the most practical training I've done.",
-    avatarUrl: "/avatars/sneha.png",
   },
   {
     name: "Riya Sharma",
@@ -45,21 +42,28 @@ const defaultTestimonials: TestimonialItem[] = [
     company: "Sarvpratham Alum",
     rating: 5,
     text: "This course has been a game-changer for me. The content is engaging, informative, and relevant to my career goals. I highly recommend it!",
-    avatarUrl: "/avatars/rohan.png",
   },
 ];
 
 export function Testimonials() {
-  const { data: dbTestimonials } = useQuery<TestimonialItem[]>({
+  const { data: dbTestimonials, isPending } = useQuery<TestimonialItem[]>({
     queryKey: ["testimonials"],
     queryFn: async () => {
       const res = await fetch("/api/testimonials");
       if (!res.ok) throw new Error("Failed to fetch testimonials");
-      return res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
-  const list = dbTestimonials && dbTestimonials.length > 0 ? dbTestimonials : defaultTestimonials;
+  // Testimonials (and their photos) come from the admin panel. The built-in
+  // fallback is only for when none are published; showing it while the
+  // request is in flight made the sample entries the first thing on screen.
+  const list = isPending
+    ? null
+    : dbTestimonials && dbTestimonials.length > 0
+      ? dbTestimonials
+      : defaultTestimonials;
 
   return (
     <section className="px-4 py-16 sm:py-20 bg-white border-t border-slate-100">
@@ -80,7 +84,28 @@ export function Testimonials() {
 
         {/* Written Review Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 pt-4">
-          {list.map((t, idx) => (
+          {list === null &&
+            Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={`skeleton-${idx}`}
+                className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm flex flex-col justify-between animate-pulse"
+              >
+                <div className="space-y-3">
+                  <div className="h-4 w-24 rounded bg-slate-100" />
+                  <div className="h-3 w-full rounded bg-slate-100" />
+                  <div className="h-3 w-full rounded bg-slate-100" />
+                  <div className="h-3 w-2/3 rounded bg-slate-100" />
+                </div>
+                <div className="mt-6 border-t border-slate-50 pt-4 flex items-center gap-3">
+                  <div className="h-14 w-14 rounded-full bg-slate-100 shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-3 w-24 rounded bg-slate-100" />
+                    <div className="h-3 w-32 rounded bg-slate-100" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          {list?.map((t, idx) => (
             <Reveal
               key={t.name + idx}
               delay={idx * 80}
