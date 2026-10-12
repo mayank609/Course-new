@@ -1,4 +1,6 @@
+import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { connectDB } from "./db";
 import { Course } from "./models/Course";
@@ -15,6 +17,7 @@ import {
   sendPasswordResetEmail,
   sendRegistrationOtpEmail,
   sendActivationOtpEmail,
+  sendLoginOtpEmail,
   sendGuestPurchaseConfirmationEmail,
   sendActivationLinkEmail,
 } from "./mail";
@@ -171,8 +174,25 @@ async function recordCartEvent(params: {
 }
 
 function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(100000, 1000000));
 }
+
+// OTPs travel inside signed-but-readable JWTs (or sit in the DB), so never
+// store the code itself — only an HMAC keyed by JWT_SECRET and bound to the
+// purpose and account, which can't be reversed or recomputed without the secret.
+function hashOtp(otp: string, context: string): string {
+  return crypto.createHmac("sha256", process.env.JWT_SECRET!).update(`${context}:${otp.trim()}`).digest("hex");
+}
+
+function otpMatches(otp: string, context: string, expectedHash: string | undefined): boolean {
+  if (!expectedHash) return false;
+  const a = Buffer.from(hashOtp(otp, context), "hex");
+  const b = Buffer.from(expectedHash, "hex");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+const LOGIN_OTP_TTL_MS = 10 * 60 * 1000;
+const LOGIN_OTP_MAX_ATTEMPTS = 5;
 
 function json(data: unknown, init: ResponseInit = {}): Response {
   const headers = new Headers(init.headers);
@@ -327,7 +347,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     // fields at the query level rather than shipping them to every visitor.
     const courses = await Course.find(filter)
       .select("-videos -videoModules -quizzes -assignments -classworks")
-      .sort({ createdAt: -1 });
+      .sort({ sortOrder: 1, createdAt: -1 });
     const formatted = courses.map(c => {
       const obj = c.toObject();
       obj.enrolledCount = Math.max(50, obj.enrolledCount || 0);
@@ -449,7 +469,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       return json(
         {
           error:
-            "You already have a purchase under this email or phone. Check your email/WhatsApp for an activation link, or use Forgot Password to set one.",
+            "You already have a purchase under this email or phone — no need to register. Log in with \"Email OTP\" on the login page to access your courses.",
           guestAccountExists: true,
         },
         { status: 409 }
@@ -458,7 +478,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
 
     const otp = generateOtp();
     const otpToken = jwt.sign(
-      { purpose: REGISTER_OTP_PURPOSE, name, email: normalizedEmail, phone, otp },
+      { purpose: REGISTER_OTP_PURPOSE, name, email: normalizedEmail, phone, otpHash: hashOtp(otp, `register:${normalizedEmail}`) },
       process.env.JWT_SECRET!,
       { expiresIn: "10m" }
     );
@@ -483,7 +503,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       return json({ error: "Token, code and password are required" }, { status: 400 });
     }
 
-    let payload: { purpose: string; name: string; email: string; phone?: string; otp: string };
+    let payload: { purpose: string; name: string; email: string; phone?: string; otpHash?: string };
     try {
       payload = jwt.verify(token, process.env.JWT_SECRET!) as typeof payload;
     } catch {
@@ -492,7 +512,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     if (payload.purpose !== REGISTER_OTP_PURPOSE) {
       return json({ error: "Invalid verification token" }, { status: 400 });
     }
-    if (payload.otp !== otp.trim()) {
+    if (!otpMatches(otp, `register:${payload.email}`, payload.otpHash)) {
       return json({ error: "Incorrect verification code" }, { status: 400 });
     }
 
@@ -542,6 +562,76 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     if (!student || !student.passwordHash || !(await bcrypt.compare(password, student.passwordHash))) {
       return json({ error: "Invalid email or password" }, { status: 401 });
     }
+    const token = signStudentSession({ id: String(student._id), email: student.email, name: student.name });
+    return jsonWithCookie(
+      { id: student._id, email: student.email, name: student.name },
+      studentCookieHeader(token)
+    );
+  }
+
+  // Passwordless login: email a one-time code. Guest checkouts create an
+  // account with no password, so this is how a buyer gets back into their
+  // courses later (another device, expired session) without registering.
+  if (method === "POST" && path === "/student/login/otp/send") {
+    const body = await readJson(request);
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return json({ error: "Please enter a valid email address" }, { status: 400 });
+    }
+
+    // Same response whether or not the account exists, so this can't be used
+    // to discover who has bought a course.
+    const genericResponse = json({ ok: true, message: "If an account exists for this email, we've sent a login code." });
+
+    const student = await Student.findOne({ email });
+    if (!student) return genericResponse;
+
+    const otp = generateOtp();
+    student.loginOtpHash = hashOtp(otp, `login:${student._id}`);
+    student.loginOtpExpiresAt = new Date(Date.now() + LOGIN_OTP_TTL_MS);
+    student.loginOtpAttempts = 0;
+    await student.save();
+
+    if (!process.env.BREVO_API_KEY) {
+      console.log(`[login-otp] BREVO_API_KEY not set — OTP for ${student.email}: ${otp}`);
+    }
+    try {
+      await sendLoginOtpEmail(student.email, student.name, otp);
+    } catch (err) {
+      console.error("[login-otp] failed to send OTP email:", err);
+      return json({ error: "Failed to send the login code. Please try again." }, { status: 500 });
+    }
+    return genericResponse;
+  }
+
+  if (method === "POST" && path === "/student/login/otp/verify") {
+    const body = await readJson(request);
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const otp = typeof body.otp === "string" ? body.otp.trim() : "";
+    if (!email || !otp) return json({ error: "Email and code are required" }, { status: 400 });
+
+    const invalid = json({ error: "Incorrect or expired code. Please request a new one." }, { status: 400 });
+    const student = await Student.findOne({ email }).select("+loginOtpHash");
+    if (!student || !student.loginOtpHash || !student.loginOtpExpiresAt) return invalid;
+    if (student.loginOtpExpiresAt.getTime() < Date.now() || (student.loginOtpAttempts ?? 0) >= LOGIN_OTP_MAX_ATTEMPTS) {
+      student.loginOtpHash = "";
+      student.loginOtpExpiresAt = null;
+      await student.save();
+      return invalid;
+    }
+
+    if (!otpMatches(otp, `login:${student._id}`, student.loginOtpHash)) {
+      student.loginOtpAttempts = (student.loginOtpAttempts ?? 0) + 1;
+      await student.save();
+      return invalid;
+    }
+
+    // Single use.
+    student.loginOtpHash = "";
+    student.loginOtpExpiresAt = null;
+    student.loginOtpAttempts = 0;
+    await student.save();
+
     const token = signStudentSession({ id: String(student._id), email: student.email, name: student.name });
     return jsonWithCookie(
       { id: student._id, email: student.email, name: student.name },
@@ -658,7 +748,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
 
     const otp = generateOtp();
     const otpToken = jwt.sign(
-      { id: String(student._id), purpose: ACTIVATION_OTP_PURPOSE, otp },
+      { id: String(student._id), purpose: ACTIVATION_OTP_PURPOSE, otpHash: hashOtp(otp, `activate:${student._id}`) },
       process.env.JWT_SECRET!,
       { expiresIn: "10m" }
     );
@@ -686,7 +776,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
       return json({ error: "Password must be at least 6 characters" }, { status: 400 });
     }
 
-    let payload: { id: string; purpose: string; otp: string };
+    let payload: { id: string; purpose: string; otpHash?: string };
     try {
       payload = jwt.verify(otpToken, process.env.JWT_SECRET!) as typeof payload;
     } catch {
@@ -695,7 +785,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
     if (payload.purpose !== ACTIVATION_OTP_PURPOSE) {
       return json({ error: "Invalid verification token" }, { status: 400 });
     }
-    if (payload.otp !== otp.trim()) {
+    if (!otpMatches(otp, `activate:${payload.id}`, payload.otpHash)) {
       return json({ error: "Incorrect verification code" }, { status: 400 });
     }
 
@@ -779,7 +869,7 @@ async function handlePublicRoute(request: Request, path: string, url: URL): Prom
   if (method === "GET" && path === "/student/me") {
     const session = getStudentSession(request);
     if (!session) return json({ error: "Not authenticated" }, { status: 401 });
-    const student = await Student.findById(session.id).select("-passwordHash");
+    const student = await Student.findById(session.id).select("-passwordHash -loginOtpExpiresAt -loginOtpAttempts");
     if (!student) return json({ error: "Student not found" }, { status: 404 });
     return json(student);
   }
@@ -1479,7 +1569,7 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   // --- Courses CRUD ---
 
   if (method === "GET" && path === "/courses") {
-    const courses = await Course.find().sort({ createdAt: -1 });
+    const courses = await Course.find().sort({ sortOrder: 1, createdAt: -1 });
     return json(courses);
   }
 
@@ -1498,6 +1588,22 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
       }
       throw err;
     }
+  }
+
+  // Saves the drag-and-drop order from the admin Courses page: `ids` is every
+  // course id in the order it should appear on the site.
+  if (method === "PUT" && path === "/courses/reorder") {
+    const body = await readJson(request);
+    const ids = Array.isArray(body.ids)
+      ? body.ids.filter((id): id is string => typeof id === "string" && mongoose.isValidObjectId(id))
+      : [];
+    if (ids.length === 0) return json({ error: "ids is required" }, { status: 400 });
+    await Course.bulkWrite(
+      ids.map((id, index) => ({
+        updateOne: { filter: { _id: id }, update: { $set: { sortOrder: index } } },
+      }))
+    );
+    return json({ ok: true });
   }
 
   const courseIdMatch = path.match(/^\/courses\/([^/]+)$/);
@@ -1655,7 +1761,7 @@ async function handleAdminRoute(request: Request, path: string, url: URL): Promi
   // --- Students CRUD ---
 
   if (method === "GET" && path === "/students") {
-    const list = await Student.find().select("-passwordHash").sort({ createdAt: -1 });
+    const list = await Student.find().select("-passwordHash -loginOtpExpiresAt -loginOtpAttempts").sort({ createdAt: -1 });
     return json(list);
   }
 

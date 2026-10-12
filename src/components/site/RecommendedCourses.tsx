@@ -18,7 +18,6 @@ export function RecommendedCourses({
   heading?: string;
 }) {
   if (!courses || courses.length === 0) return null;
-  const visibleCourses = courses.slice(0, 3);
 
   return (
     <section className="mt-16 border-t border-border pt-10">
@@ -27,7 +26,7 @@ export function RecommendedCourses({
         <h2 className="font-serif text-2xl font-bold">{heading}</h2>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
-        {visibleCourses.map((c) => {
+        {courses.map((c) => {
           const pricing = getCoursePricing(c.price, c.originalPrice);
           return (
             <div

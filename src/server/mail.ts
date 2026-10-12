@@ -69,6 +69,27 @@ export function sendRegistrationOtpEmail(to: string, name: string, otp: string):
   });
 }
 
+export function sendLoginOtpEmail(to: string, name: string, otp: string): Promise<void> {
+  return sendEmail({
+    to,
+    toName: name,
+    subject: `${otp} is your Sarvpratham Analytics login code`,
+    html: emailShell(
+      "Your login code",
+      `
+        <p>Hi ${name},</p>
+        <p>Use the code below to log in and access your courses. This code expires in 10 minutes.</p>
+        <p style="margin: 24px 0; text-align: center;">
+          <span style="display: inline-block; background: #f1f1f4; color: #1a1a2e; padding: 14px 28px; border-radius: 12px; font-size: 28px; font-weight: bold; letter-spacing: 6px;">
+            ${otp}
+          </span>
+        </p>
+        <p>If you didn't try to log in, you can safely ignore this email.</p>
+      `
+    ),
+  });
+}
+
 export function sendActivationOtpEmail(to: string, name: string, otp: string): Promise<void> {
   return sendEmail({
     to,

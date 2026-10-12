@@ -7,13 +7,17 @@ import { z } from "zod";
 import { useEffect } from "react";
 import { trackMetaEvent } from "@/components/site/MetaPixel";
 
+// TanStack Router JSON-parses search params, so "?guest=1" arrives as the
+// number 1 — accept both forms rather than silently falling back.
+const flagParam = z.union([z.string(), z.number()]).transform((v) => String(v));
+
 const searchSchema = z.object({
   course: z.string().optional().catch(""),
   amount: z.number().optional().catch(undefined),
   currency: z.string().optional().catch("INR"),
   orderId: z.string().optional().catch(""),
-  guest: z.string().optional().catch(""),
-  loggedIn: z.string().optional().catch("1"),
+  guest: flagParam.optional().catch(""),
+  loggedIn: flagParam.optional().catch("1"),
 });
 
 export const Route = createFileRoute("/thank-you")({
@@ -101,8 +105,7 @@ function ThankYouPage() {
             <div className="flex items-start gap-3 p-4 bg-amber-500/10 text-left rounded-2xl border border-amber-500/20">
               <Mail className="h-4 w-4 text-[color:var(--brand-gold-foreground)] shrink-0 mt-0.5" />
               <p className="text-xs text-foreground/80">
-                You're logged in for this session. We've also emailed and WhatsApp'd you an activation link — set a
-                password there so you can log in again anytime.
+                You're logged in and your course is unlocked — no registration needed. Next time, just choose "Email OTP" on the login page and enter this email. (Optional: use the link we emailed and WhatsApp'd to set a password.)
               </p>
             </div>
           )}
@@ -111,8 +114,8 @@ function ThankYouPage() {
             <div className="flex items-start gap-3 p-4 bg-amber-500/10 text-left rounded-2xl border border-amber-500/20">
               <Mail className="h-4 w-4 text-[color:var(--brand-gold-foreground)] shrink-0 mt-0.5" />
               <p className="text-xs text-foreground/80">
-                This purchase is linked to an existing account under this email/phone. Please log in with that
-                account's password to access it.
+                This purchase is linked to an existing account under this email/phone. Log in with that account's
+                password, or choose "Email OTP" on the login page, to access it.
               </p>
             </div>
           )}
