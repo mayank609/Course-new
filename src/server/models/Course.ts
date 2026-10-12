@@ -37,6 +37,9 @@ const courseSchema = new mongoose.Schema(
     published: { type: Boolean, default: true },
     showInFooter: { type: Boolean, default: true },
     footerOrder: { type: Number, default: 0 },
+    // Position on the site's course lists, set by drag-and-drop in the admin
+    // panel (lower comes first; ties fall back to newest first).
+    sortOrder: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

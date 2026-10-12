@@ -20,6 +20,11 @@ const studentSchema = new mongoose.Schema(
     state: { type: String, trim: true, default: "" },
     city: { type: String, trim: true, default: "" },
     purchasedCourses: { type: [String], default: [] }, // Array of course slugs
+    // One-time email login code (see /student/login/otp/*). Only an HMAC of
+    // the code is stored; attempts are capped so it can't be brute-forced.
+    loginOtpHash: { type: String, default: "", select: false },
+    loginOtpExpiresAt: { type: Date, default: null },
+    loginOtpAttempts: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

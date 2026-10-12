@@ -41,7 +41,7 @@ function DashboardPage() {
   };
 
   // Fetch Student Profile
-  const { data: student, isLoading: isProfileLoading, isError: isProfileError } = useQuery({
+  const { data: student, isLoading: isProfileLoading, isError: isProfileQueryError, isFetching: isProfileFetching } = useQuery({
     queryKey: ["student-me"],
     queryFn: async () => {
       const res = await fetch("/api/student/me");
@@ -52,6 +52,10 @@ function DashboardPage() {
     },
     retry: false,
   });
+
+  // A stale cached error (from before login) is refetched on mount; wait for
+  // that fetch rather than showing the log in / register screen meanwhile.
+  const isProfileError = isProfileQueryError && !isProfileFetching;
 
   // Fetch Student Purchased Courses
   const { data: courses, isLoading: isCoursesLoading } = useQuery({
@@ -115,7 +119,7 @@ function DashboardPage() {
     );
   }
 
-  const isLoading = isProfileLoading || isCoursesLoading;
+  const isLoading = isProfileLoading || (isProfileFetching && !student) || isCoursesLoading;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

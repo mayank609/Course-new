@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/checkout-callback")({
 function CheckoutCallbackPage() {
   const { order_id } = Route.useSearch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [courseTitle, setCourseTitle] = useState("");
@@ -42,6 +44,12 @@ function CheckoutCallbackPage() {
         if (!isMounted) return;
 
         if (response.ok && data.ok) {
+          // The Header fetched the profile on this page before verification
+          // logged the guest in, so its cached "not logged in" result would
+          // otherwise send the buyer to /login (and from there to register)
+          // when they open their dashboard or course straight after paying.
+          queryClient.resetQueries({ queryKey: ["student-me"] });
+          queryClient.resetQueries({ queryKey: ["student-courses"] });
           setStatus("success");
           setCourseTitle(data.courseTitle || "Course");
           toast.success("Payment verified successfully!");
@@ -87,7 +95,7 @@ function CheckoutCallbackPage() {
     return () => {
       isMounted = false;
     };
-  }, [order_id, navigate]);
+  }, [order_id, navigate, queryClient]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

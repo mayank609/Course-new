@@ -54,7 +54,7 @@ function LearningClassroomPage() {
   const [expandedModules, setExpandedModules] = useState<Set<number>>(new Set([0]));
 
   // Fetch Student Profile (to verify authentication and purchase)
-  const { data: student, isLoading: isProfileLoading, isError: isProfileError } = useQuery({
+  const { data: student, isLoading: isProfileLoading, isError: isProfileQueryError, isFetching: isProfileFetching } = useQuery({
     queryKey: ["student-me"],
     queryFn: async () => {
       const res = await fetch("/api/student/me");
@@ -96,6 +96,11 @@ function LearningClassroomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeVideoIndex, modules.length]);
 
+  // Only treat the profile as "logged out" once a fresh fetch has failed —
+  // a stale error left in the cache from before login (e.g. right after a
+  // guest checkout) is refetched on mount and must not bounce to /login.
+  const isProfileError = isProfileQueryError && !isProfileFetching;
+
   // Redirect to login if unauthorized
   useEffect(() => {
     if (isProfileError) {
@@ -112,7 +117,7 @@ function LearningClassroomPage() {
     }
   }, [student, slug, navigate]);
 
-  const isLoading = isProfileLoading || isCourseLoading;
+  const isLoading = isProfileLoading || (isProfileFetching && !student) || isCourseLoading;
   const hasAccess = student && student.purchasedCourses.includes(slug);
 
   if (isProfileError || (student && !hasAccess)) {
