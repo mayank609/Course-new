@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Linkedin, Facebook, Instagram, Youtube, Mail } from "lucide-react";
-import { fetchCourses } from "@/lib/api";
+import { fetchCourses, fetchCategories } from "@/lib/api";
 
 function ThreadsIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -17,13 +17,21 @@ export function Footer() {
     queryFn: () => fetchCourses(),
   });
 
-  // Only real, published courses the admin has opted into the footer — never
-  // hard-coded names/links, so a deleted or unpublished course disappears
-  // automatically and a new one shows up without a code change.
-  const footerCourses = (courses ?? [])
-    .filter((c) => c.slug && c.showInFooter !== false)
-    .sort((a, b) => (a.footerOrder ?? 0) - (b.footerOrder ?? 0))
-    .slice(0, 6);
+  const { data: categories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => fetchCategories().catch(() => []),
+  });
+
+  // Course categories from the admin panel, each linking to the catalog
+  // filtered to it. Only categories with at least one published course are
+  // listed, so an empty category never leads to a blank page; if the
+  // categories list is unavailable, fall back to the ones courses use.
+  const usedCategories = new Set((courses ?? []).map((c) => c.category).filter(Boolean));
+  const footerCategories = (
+    categories && categories.length > 0
+      ? categories.map((c) => c.name)
+      : Array.from(usedCategories).sort((a, b) => a.localeCompare(b))
+  ).filter((name) => usedCategories.has(name));
 
   return (
     <footer className="bg-[color:var(--brand-dark)] text-white">
@@ -138,11 +146,11 @@ export function Footer() {
           {
             h: "Popular Courses",
             items:
-              footerCourses.length > 0
-                ? footerCourses.map((c) => ({
-                    label: c.title,
-                    to: `/courses/${c.slug}`,
-                    search: undefined,
+              footerCategories.length > 0
+                ? footerCategories.map((name) => ({
+                    label: name,
+                    to: "/courses",
+                    search: { category: name },
                   }))
                 : [{ label: "Browse All Courses", to: "/courses", search: undefined }],
           },
