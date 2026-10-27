@@ -4,7 +4,7 @@ export type CoursePricing = {
   discountPercent: number;
   savings: number;
   hasDiscount: boolean;
-};
+ };
 
 /**
  * Calculates standard offer price, original (MRP / cut) price, discount percentage,
